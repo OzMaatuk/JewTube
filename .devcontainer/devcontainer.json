@@ -1,0 +1,48 @@
+{
+  "name": "YouTube Wrapper Platform",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "overrideCommand": true,
+  "containerEnv": {
+    "HUSKY": "0"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "biomejs.biome-nightly",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "vitest.explorer"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "quickfix.biome": "explicit",
+          "source.organizeImports.biome": "explicit"
+        },
+        "typescript.enablePromptUseWorkspaceTsdk": true
+      }
+    }
+  },
+  "forwardPorts": [3000, 6379],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Dev Server",
+      "onAutoForward": "notify"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "sudo chown -R node:node /workspace/node_modules && npm install",
+  "postStartCommand": "echo 'Dev container ready! Run npm run dev to start the development server.'",
+  "remoteUser": "node",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,readonly,type=bind,consistency=cached"
+  ]
+}

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app-children:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_FILE=/app/config/children.yaml
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
+      - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
+    volumes:
+      - ./config/children.example.yaml:/app/config/children.yaml:ro
+    restart: unless-stopped
+
+  app-education:
+    build: .
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+      - CONFIG_FILE=/app/config/education.yaml
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
+      - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
+    volumes:
+      - ./config/education.example.yaml:/app/config/education.yaml:ro
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:

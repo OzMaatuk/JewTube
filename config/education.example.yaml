@@ -1,0 +1,113 @@
+# Educational Content Configuration Example
+# Curated educational videos for students
+
+deployment:
+  id: "education-content"
+  name: "EduStream"
+  domain: "edu.example.com"
+
+branding:
+  appName: "EduStream"
+  logo: "/logos/edu-logo.png"
+  favicon: "/favicons/edu-favicon.ico"
+  colorScheme:
+    primary: "#3B82F6"
+    secondary: "#8B5CF6"
+    background: "#F9FAFB"
+    text: "#111827"
+    accent: "#10B981"
+
+content:
+  refreshInterval: 60  # Refresh every hour
+  manualApprovalMode: false
+  sources:
+    # Educational channels
+    - type: "channel"
+      id: "UCX6OQ3DkcsbYNE6H8uQQuVA"  # CrashCourse
+    - type: "channel"
+      id: "UCP7jMXSY2xbc3KCAE0MHQ-A"  # Khan Academy
+    - type: "channel"
+      id: "UCsooa4yRKGN_zEE8iknghZA"  # TED-Ed
+    
+    # Science playlists
+    - type: "playlist"
+      id: "PL8dPuuaLjXtPAJr1ysd5yGIyiSFuh0mIL"
+    
+    # Search for specific topics
+    - type: "search"
+      params:
+        q: "science explained"
+        maxResults: 100
+        relevanceLanguage: "en"
+
+filters:
+  enabled: true
+  sensitivity: "moderate"
+  dryRunMode: false
+  rules:
+    # Educational categories only
+    - id: "educational-categories"
+      type: "content"
+      conditions:
+        - field: "categoryId"
+          operator: "in"
+          value: ["27", "28"]  # Education, Science & Technology
+      action: "allow"
+    
+    # Block entertainment content
+    - id: "block-entertainment"
+      type: "content"
+      conditions:
+        - field: "categoryId"
+          operator: "equals"
+          value: "24"  # Entertainment
+      action: "block"
+    
+    # Minimum video quality (view count)
+    - id: "quality-threshold"
+      type: "metadata"
+      conditions:
+        - field: "viewCount"
+          operator: "gt"
+          value: 1000
+      action: "allow"
+    
+    # Recent content (last 2 years)
+    - id: "recent-content"
+      type: "temporal"
+      conditions:
+        - field: "publishedAt"
+          operator: "gt"
+          value: "2y"
+      action: "allow"
+    
+    # Block clickbait patterns
+    - id: "block-clickbait"
+      type: "pattern"
+      conditions:
+        - field: "title"
+          operator: "regex"
+          value: "(?i)(you won't believe|shocking|must see|click here)"
+      action: "block"
+
+privacy:
+  coppaCompliant: false
+  gdprCompliant: true
+  disableTracking: false
+  ageGate:
+    enabled: true
+    minimumAge: 13
+    verificationMethod: "simple"
+
+features:
+  enableSearch: true
+  enableComments: false
+  enableSharing: true
+  enablePlaylists: true
+
+api:
+  youtubeApiKey: "${YOUTUBE_API_KEY}"
+  rateLimit:
+    requestsPerDay: 50000
+    requestsPerMinute: 200
+    burstLimit: 300

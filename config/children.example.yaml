@@ -1,0 +1,110 @@
+# Children's Content Configuration Example
+# Safe, curated video content for kids
+
+deployment:
+  id: "children-content"
+  name: "Kids Safe Videos"
+  domain: "kids.example.com"
+
+branding:
+  appName: "Kids Safe Videos"
+  logo: "/logos/kids-logo.png"
+  favicon: "/favicons/kids-favicon.ico"
+  colorScheme:
+    primary: "#FF6B6B"
+    secondary: "#4ECDC4"
+    background: "#FFFFFF"
+    text: "#2C3E50"
+    accent: "#FFD93D"
+
+content:
+  refreshInterval: 30  # Refresh every 30 minutes
+  manualApprovalMode: false
+  sources:
+    # Popular kids channels
+    - type: "channel"
+      id: "UCbCmjCuTUZos6Inko4u57UQ"  # CoComelon
+    - type: "channel"
+      id: "UCJplp5SjeGSdVdwsfb9Q7lQ"  # Super Simple Songs
+    
+    # Curated playlists
+    - type: "playlist"
+      id: "PLrEnWoR732-BHrPp_Pm8_VleD68f9s14-"
+    
+    # Search for educational content
+    - type: "search"
+      id: "educational-kids-search"
+      params:
+        q: "educational kids songs"
+        maxResults: 50
+        videoDuration: "short"  # Under 4 minutes
+
+filters:
+  enabled: true
+  sensitivity: "strict"
+  dryRunMode: false
+  rules:
+    # Only allow content made for kids
+    - id: "kids-only"
+      type: "content"
+      conditions:
+        - field: "madeForKids"
+          operator: "equals"
+          value: true
+      action: "allow"
+    
+    # Block profanity
+    - id: "block-profanity"
+      type: "pattern"
+      conditions:
+        - field: "title"
+          operator: "regex"
+          value: "\\b(bad|stupid|hate|dumb)\\b"
+      action: "block"
+    
+    # Require short videos (max 10 minutes)
+    - id: "short-videos-only"
+      type: "metadata"
+      conditions:
+        - field: "duration"
+          operator: "lt"
+          value: 600
+      action: "allow"
+    
+    # Only verified channels
+    - id: "verified-only"
+      type: "source"
+      conditions:
+        - field: "verified"
+          operator: "equals"
+          value: true
+      action: "allow"
+    
+    # Require closed captions
+    - id: "require-captions"
+      type: "content"
+      conditions:
+        - field: "hasClosedCaptions"
+          operator: "equals"
+          value: true
+      action: "allow"
+
+privacy:
+  coppaCompliant: true
+  gdprCompliant: true
+  disableTracking: true
+  ageGate:
+    enabled: false
+
+features:
+  enableSearch: false
+  enableComments: false
+  enableSharing: true
+  enablePlaylists: false
+
+api:
+  youtubeApiKey: "${YOUTUBE_API_KEY}"
+  rateLimit:
+    requestsPerDay: 10000
+    requestsPerMinute: 100
+    burstLimit: 150

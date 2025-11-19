@@ -1,0 +1,106 @@
+# Religious Content Configuration Example
+# Faith-based video content for religious communities
+
+deployment:
+  id: "religious-content"
+  name: "FaithStream"
+  domain: "faith.example.com"
+
+branding:
+  appName: "FaithStream"
+  logo: "/logos/faith-logo.png"
+  favicon: "/favicons/faith-favicon.ico"
+  colorScheme:
+    primary: "#7C3AED"
+    secondary: "#EC4899"
+    background: "#FEFEFE"
+    text: "#1F2937"
+    accent: "#F59E0B"
+
+content:
+  refreshInterval: 120  # Refresh every 2 hours
+  manualApprovalMode: true  # Manual approval for new content
+  sources:
+    # Approved religious channels
+    - type: "channel"
+      id: "UCexample1"  # Replace with actual channel IDs
+    - type: "channel"
+      id: "UCexample2"
+    
+    # Curated sermon playlists
+    - type: "playlist"
+      id: "PLexample1"
+    
+    # Specific approved videos
+    - type: "video"
+      id: "dQw4w9WgXcQ"
+
+filters:
+  enabled: true
+  sensitivity: "strict"
+  dryRunMode: false
+  rules:
+    # Allowlist mode - only approved channels
+    - id: "approved-channels-only"
+      type: "allowlist"
+      conditions:
+        - field: "channelId"
+          operator: "in"
+          value: ["UCexample1", "UCexample2"]
+      action: "allow"
+    
+    # Block controversial topics
+    - id: "block-controversial"
+      type: "pattern"
+      conditions:
+        - field: "description"
+          operator: "regex"
+          value: "(?i)(politics|debate|controversy)"
+      action: "block"
+    
+    # Family-friendly content only
+    - id: "family-friendly"
+      type: "content"
+      conditions:
+        - field: "ageRestricted"
+          operator: "equals"
+          value: false
+      action: "allow"
+    
+    # Require high engagement (quality indicator)
+    - id: "high-engagement"
+      type: "behavioral"
+      conditions:
+        - field: "likeRatio"
+          operator: "gt"
+          value: 0.9
+      action: "allow"
+    
+    # Block videos with disabled comments
+    - id: "comments-enabled"
+      type: "behavioral"
+      conditions:
+        - field: "commentsDisabled"
+          operator: "equals"
+          value: false
+      action: "allow"
+
+privacy:
+  coppaCompliant: false
+  gdprCompliant: true
+  disableTracking: false
+  ageGate:
+    enabled: false
+
+features:
+  enableSearch: false
+  enableComments: false
+  enableSharing: true
+  enablePlaylists: true
+
+api:
+  youtubeApiKey: "${YOUTUBE_API_KEY}"
+  rateLimit:
+    requestsPerDay: 20000
+    requestsPerMinute: 150
+    burstLimit: 200
