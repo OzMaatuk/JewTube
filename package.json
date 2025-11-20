@@ -10,6 +10,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
+    "clean": "rimraf .next",
+    "clean:all": "rimraf .next node_modules",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
