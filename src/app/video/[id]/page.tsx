@@ -40,8 +40,8 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
   return (
     <>
       <Header />
-      <main className="flex-1">
-        <div className="container mx-auto px-4 py-8">
+      <main style={{ flex: 1, background: 'linear-gradient(to bottom, #f0f9ff, #ffffff, #f0fdf4)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', paddingTop: '32px', paddingBottom: '32px' }}>
           <VideoPlayer video={video} />
         </div>
       </main>

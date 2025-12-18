@@ -75,14 +75,14 @@ export default function RootLayout({
     '--background': config.branding.colorScheme.background,
     '--foreground': config.branding.colorScheme.text,
     '--accent': config.branding.colorScheme.accent,
-  } : {
+  } as React.CSSProperties & Record<string, string> : {
     // Fallback colors if config fails to load
     '--primary': '#3B82F6',
     '--secondary': '#10B981',
     '--background': '#FFFFFF',
     '--foreground': '#1F2937',
     '--accent': '#F59E0B',
-  } as React.CSSProperties;
+  } as React.CSSProperties & Record<string, string>;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -96,7 +96,7 @@ export default function RootLayout({
       </head>
       <body style={style}>
         <ClientWrapper>
-          <div className="flex min-h-screen flex-col">{children}</div>
+          <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>{children}</div>
         </ClientWrapper>
       </body>
     </html>

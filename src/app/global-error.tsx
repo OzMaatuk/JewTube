@@ -18,18 +18,18 @@ export default function GlobalError({
     // biome-ignore lint/a11y/useHtmlLang: Global error boundary requires html/body tags
     <html>
       <body>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
-            <div className="text-6xl mb-4">💥</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Critical Error</h1>
-            <p className="text-gray-600 mb-6">
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', padding: '16px' }}>
+          <div style={{ maxWidth: '448px', width: '100%', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', padding: '24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>💥</div>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>Critical Error</h1>
+            <p style={{ color: '#6b7280', marginBottom: '24px' }}>
               A critical error occurred. Please refresh the page or contact support if the problem
               persists.
             </p>
             <button
               type="button"
               onClick={reset}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 24px', borderRadius: '8px', transition: 'background-color 0.2s', border: 'none', cursor: 'pointer' }}
             >
               Try Again
             </button>

@@ -7,18 +7,18 @@ export default function PlaylistsPage() {
   return (
     <>
       <Header />
-      <main className="flex-1">
-        <div className="container mx-auto px-4 py-16">
-          <div className="mx-auto max-w-3xl">
-            <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-blue-50 p-12 text-center shadow-lg">
-              <div className="mb-6 text-6xl">📚</div>
-              <h1 className="mb-4 text-4xl font-bold text-gray-900">Playlists</h1>
-              <p className="mb-8 text-lg text-gray-700">
+      <main style={{ flex: 1, background: 'linear-gradient(to bottom, #f0f9ff, #ffffff, #f0fdf4)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', paddingTop: '64px', paddingBottom: '64px' }}>
+          <div style={{ maxWidth: '768px', margin: '0 auto' }}>
+            <div style={{ borderRadius: '16px', background: 'linear-gradient(to bottom right, #faf5ff, #eff6ff)', padding: '48px', textAlign: 'center', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}>
+              <div style={{ marginBottom: '24px', fontSize: '48px' }}>📚</div>
+              <h1 style={{ marginBottom: '16px', fontSize: '36px', fontWeight: 'bold', color: '#1f2937' }}>Playlists</h1>
+              <p style={{ marginBottom: '32px', fontSize: '18px', color: '#374151' }}>
                 Curated playlists will be available here soon. Check back later for organized
                 collections of videos tailored just for you.
               </p>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-gray-600 shadow-sm">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500"></span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', borderRadius: '9999px', backgroundColor: 'white', padding: '12px 24px', fontSize: '14px', fontWeight: '500', color: '#6b7280', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+                <span style={{ height: '8px', width: '8px', borderRadius: '9999px', backgroundColor: '#3b82f6', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></span>
                 Coming Soon
               </div>
             </div>

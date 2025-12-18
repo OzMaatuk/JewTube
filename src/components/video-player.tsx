@@ -9,23 +9,23 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ video }: VideoPlayerProps) {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
       {/* Video player */}
-      <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
+      <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px', backgroundColor: '#000000' }}>
         <iframe
           src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`}
           title={video.title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
-          className="h-full w-full"
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
         />
       </div>
 
       {/* Video info */}
-      <div className="mt-4 space-y-4">
+      <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{video.title}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', lineHeight: '1.3' }}>{video.title}</h1>
+          <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
             <span>{formatNumber(video.viewCount)} views</span>
             <span>•</span>
             <span>{formatDate(video.publishedAt)}</span>
@@ -39,26 +39,26 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
         </div>
 
         {/* Channel info */}
-        <div className="flex items-center space-x-3 rounded-lg border p-4">
-          <div className="flex-1">
-            <h2 className="font-semibold text-gray-900">{video.channelName}</h2>
-            {video.categoryName && <p className="text-sm text-gray-600">{video.categoryName}</p>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontWeight: '600', color: '#1f2937' }}>{video.channelName}</h2>
+            {video.categoryName && <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>{video.categoryName}</p>}
           </div>
         </div>
 
         {/* Description */}
         {video.description && (
-          <div className="rounded-lg border p-4">
-            <h3 className="mb-2 font-semibold text-gray-900">Description</h3>
-            <p className="whitespace-pre-wrap text-sm text-gray-700">{video.description}</p>
+          <div style={{ borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px' }}>
+            <h3 style={{ marginBottom: '8px', fontWeight: '600', color: '#1f2937' }}>Description</h3>
+            <p style={{ whiteSpace: 'pre-wrap', fontSize: '14px', color: '#374151' }}>{video.description}</p>
           </div>
         )}
 
         {/* Tags */}
         {video.tags && video.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {video.tags.slice(0, 10).map((tag) => (
-              <span key={tag} className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+              <span key={tag} style={{ borderRadius: '9999px', backgroundColor: '#f3f4f6', padding: '4px 12px', fontSize: '12px', color: '#374151' }}>
                 {tag}
               </span>
             ))}

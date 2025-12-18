@@ -6,17 +6,17 @@ export const revalidate = 0;
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="max-w-md w-full text-center">
-        <div className="text-6xl mb-4">🔍</div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Page Not Found</h2>
-        <p className="text-gray-600 mb-6">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom, #f0f9ff, #ffffff, #f0fdf4)', padding: '16px' }}>
+      <div style={{ maxWidth: '448px', width: '100%', textAlign: 'center' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+        <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>404</h1>
+        <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#374151', marginBottom: '16px' }}>Page Not Found</h2>
+        <p style={{ color: '#6b7280', marginBottom: '24px' }}>
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Link
           href="/"
-          className="inline-block bg-primary text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity"
+          style={{ display: 'inline-block', backgroundColor: '#2563eb', color: 'white', padding: '8px 24px', borderRadius: '8px', transition: 'opacity 0.2s' }}
         >
           Go Home
         </Link>

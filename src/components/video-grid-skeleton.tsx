@@ -2,7 +2,7 @@ const SKELETON_ITEMS = Array.from({ length: 12 }, (_, i) => i);
 
 export function VideoGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px', justifyContent: 'center' }}>
       {SKELETON_ITEMS.map((i) => (
         <VideoCardSkeleton key={`skeleton-${i}`} />
       ))}

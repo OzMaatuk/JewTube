@@ -1,3 +1,5 @@
+'use client';
+
 import { formatDate, formatDuration, formatNumber } from '@/lib/utils';
 import type { Video } from '@/types';
 import Link from 'next/link';
@@ -19,26 +21,23 @@ export function VideoCard({ video }: VideoCardProps) {
         transition: 'all 0.3s',
         border: '1px solid #f3f4f6',
         transform: 'translateY(0)',
+        minHeight: '200px',
       }}
-      className="hover:shadow-2xl hover:-translate-y-2"
     >
-      {/* Video icon */}
-      <div className="flex items-center justify-center h-32 bg-gradient-to-br from-blue-50 to-green-50">
-        <div className="text-5xl">🎥</div>
-      </div>
-
       {/* Video info */}
-      <div className="p-4 space-y-3">
-        <h3 className="line-clamp-2 text-lg font-bold leading-tight text-gray-900 transition-colors hover:text-blue-600">
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, justifyContent: 'space-between' }}>
+        <h3
+          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '18px', fontWeight: 'bold', lineHeight: '1.25', color: '#1f2937', transition: 'color 0.2s' }}
+        >
           {video.title}
         </h3>
-        <p className="text-sm font-medium text-gray-700">{video.channelName}</p>
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <p style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>{video.channelName}</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px', color: '#6b7280' }}>
           <span>{formatNumber(video.viewCount)} views</span>
           <span>{formatDate(video.publishedAt)}</span>
         </div>
         {video.duration > 0 && (
-          <div className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs font-semibold text-gray-700">
+          <div style={{ display: 'inline-block', padding: '4px 8px', backgroundColor: '#f3f4f6', borderRadius: '9999px', fontSize: '12px', fontWeight: '600', color: '#374151' }}>
             {formatDuration(video.duration)}
           </div>
         )}

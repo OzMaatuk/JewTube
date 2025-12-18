@@ -8,16 +8,16 @@ interface VideoGridProps {
 export function VideoGrid({ videos }: VideoGridProps) {
   if (videos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-16 shadow-sm">
-        <div className="text-6xl mb-4">📹</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">No videos available</h2>
-        <p className="text-gray-600">Check back later for new content.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', backgroundColor: 'white', padding: '64px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>📹</div>
+        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>No videos available</h2>
+        <p style={{ color: '#6b7280' }}>Check back later for new content.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
       {videos.map((video) => (
         <VideoCard key={video.id} video={video} />
       ))}
