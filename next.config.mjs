@@ -1,19 +1,19 @@
-import withPWA from '@ducanh2912/next-pwa';
+// import withPWA from '@ducanh2912/next-pwa';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Use Turbopack for faster builds
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
+  // turbopack: {
+  //   rules: {
+  //     '*.svg': {
+  //       loaders: ['@svgr/webpack'],
+  //       as: '*.js',
+  //     },
+  //   },
+  // },
 
   // Standalone output for Docker
-  output: 'standalone',
+  // output: 'standalone',
 
   // Skip generating static error pages to avoid Html import issues
   skipTrailingSlashRedirect: true,
@@ -80,22 +80,4 @@ const nextConfig = {
   },
 };
 
-export default withPWA({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  skipWaiting: true,
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/i\.ytimg\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'youtube-thumbnails',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-      },
-    },
-  ],
-})(nextConfig);
+export default nextConfig;

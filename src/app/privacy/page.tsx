@@ -41,7 +41,7 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="text-2xl font-semibold">COPPA Compliance</h2>
                 <p>
-                  This service is compliant with the Children's Online Privacy Protection Act
+                  This service is compliant with the Children&apos;s Online Privacy Protection Act
                   (COPPA). We do not collect personal information from children under 13 without
                   parental consent.
                 </p>
@@ -85,8 +85,8 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-semibold">Third-Party Services</h2>
               <p>
-                Videos are hosted on YouTube. When you watch a video, YouTube's privacy policy also
-                applies. We do not control YouTube's data collection practices.
+                Videos are hosted on YouTube. When you watch a video, YouTube&apos;s privacy policy also
+                applies. We do not control YouTube&apos;s data collection practices.
               </p>
             </section>
 

@@ -20,36 +20,40 @@ export function Footer() {
   const disableTracking = config?.privacy.disableTracking ?? false;
 
   return (
-    <footer className="mt-auto border-t bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+    <footer style={{ marginTop: 'auto', borderTop: '2px solid #e5e7eb', background: 'linear-gradient(to right, #f9fafb, #ffffff)' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', paddingTop: '64px', paddingBottom: '64px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '48px' }}>
           {/* Brand */}
           <div>
-            <h3 className="mb-2 text-lg font-semibold" style={{ color: 'var(--primary)' }}>
+            <h3 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '16px', background: 'linear-gradient(to right, #2563eb, #10b981)', backgroundClip: 'text', WebkitBackgroundClip: 'text', color: 'transparent' }}>
               {appName}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p style={{ fontSize: '16px', color: '#6b7280', lineHeight: '1.6' }}>
               Curated video content for {deploymentName}
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h4 className="mb-2 text-sm font-semibold">Legal</h4>
-            <ul className="space-y-1 text-sm">
+            <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>Legal</h4>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <li>
-                <Link href="/privacy" className="text-gray-600 hover:text-primary">
+                <Link href="/privacy" style={{ fontSize: '16px', color: '#6b7280', transition: 'color 0.2s', fontWeight: '500' }} className="hover:text-blue-600">
                   Privacy Policy
                 </Link>
               </li>
               {coppaCompliant && (
                 <li>
-                  <span className="text-xs text-gray-500">COPPA Compliant</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 12px', borderRadius: '9999px', fontSize: '14px', fontWeight: '600', backgroundColor: '#dcfce7', color: '#166534' }}>
+                    ✓ COPPA Compliant
+                  </span>
                 </li>
               )}
               {gdprCompliant && (
                 <li>
-                  <span className="text-xs text-gray-500">GDPR Compliant</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 12px', borderRadius: '9999px', fontSize: '14px', fontWeight: '600', backgroundColor: '#dcfce7', color: '#166534' }}>
+                    ✓ GDPR Compliant
+                  </span>
                 </li>
               )}
             </ul>
@@ -57,16 +61,20 @@ export function Footer() {
 
           {/* Info */}
           <div>
-            <h4 className="mb-2 text-sm font-semibold">Information</h4>
-            <p className="text-xs text-gray-500">Content is curated and filtered for safety.</p>
+            <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '16px' }}>Information</h4>
+            <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '16px' }}>Content is curated and filtered for safety.</p>
             {disableTracking && (
-              <p className="mt-2 text-xs text-gray-500">🔒 No tracking or analytics</p>
+              <p style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 12px', borderRadius: '9999px', fontSize: '14px', fontWeight: '600', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                🔒 No tracking or analytics
+              </p>
             )}
           </div>
         </div>
 
-        <div className="mt-8 border-t pt-4 text-center text-sm text-gray-500">
-          © {currentYear} {appName}. All rights reserved.
+        <div style={{ marginTop: '48px', borderTop: '1px solid #e5e7eb', paddingTop: '32px', textAlign: 'center' }}>
+          <p style={{ fontSize: '16px', color: '#6b7280' }}>
+            © {currentYear} {appName}. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

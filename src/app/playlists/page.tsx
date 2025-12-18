@@ -1,6 +1,8 @@
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 
+export const dynamic = 'force-dynamic';
+
 export default function PlaylistsPage() {
   return (
     <>

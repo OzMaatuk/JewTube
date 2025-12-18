@@ -75,7 +75,14 @@ export default function RootLayout({
     '--background': config.branding.colorScheme.background,
     '--foreground': config.branding.colorScheme.text,
     '--accent': config.branding.colorScheme.accent,
-  } as React.CSSProperties : {};
+  } : {
+    // Fallback colors if config fails to load
+    '--primary': '#3B82F6',
+    '--secondary': '#10B981',
+    '--background': '#FFFFFF',
+    '--foreground': '#1F2937',
+    '--accent': '#F59E0B',
+  } as React.CSSProperties;
 
   return (
     <html lang="en" suppressHydrationWarning>
