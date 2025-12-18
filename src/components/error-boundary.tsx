@@ -1,6 +1,5 @@
 'use client';
 
-import { logger } from '@/lib/logger';
 import React from 'react';
 
 interface ErrorBoundaryProps {
@@ -25,7 +24,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to console and logging service
-    logger.error(
+    console.error(
       {
         error: {
           name: error.name,

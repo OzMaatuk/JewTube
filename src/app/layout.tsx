@@ -1,4 +1,3 @@
-import { ClientWrapper } from '@/components/client-wrapper';
 import { getConfig } from '@/lib/config';
 import { setDeploymentId } from '@/lib/logger';
 import type { Metadata, Viewport } from 'next';
@@ -95,9 +94,7 @@ export default function RootLayout({
         )}
       </head>
       <body style={style}>
-        <ClientWrapper>
-          <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>{children}</div>
-        </ClientWrapper>
+        <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>{children}</div>
       </body>
     </html>
   );

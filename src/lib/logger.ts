@@ -1,4 +1,4 @@
-import pino from 'pino';
+// Simple logger to avoid Pino bundling issues with Next.js 16 Turbopack
 
 // Get deployment ID from config (will be set after config loads)
 let deploymentId = 'unknown';
@@ -7,44 +7,74 @@ export function setDeploymentId(id: string) {
   deploymentId = id;
 }
 
-// Create base logger instance
-export const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  base: {
-    env: process.env.NODE_ENV || 'development',
+// Simple logger implementation
+export const logger = {
+  info: (obj: any, msg?: string) => {
+    if (msg) {
+      console.log(`[${deploymentId}] INFO:`, msg, obj);
+    } else {
+      console.log(`[${deploymentId}] INFO:`, obj);
+    }
   },
-  formatters: {
-    level: (label) => {
-      return { level: label };
-    },
-    bindings: () => {
-      return { deploymentId };
-    },
+  error: (obj: any, msg?: string) => {
+    if (msg) {
+      console.error(`[${deploymentId}] ERROR:`, msg, obj);
+    } else {
+      console.error(`[${deploymentId}] ERROR:`, obj);
+    }
   },
-  // Disable pino-pretty transport to avoid thread-stream issues in Docker
-  // Use browser option for simpler logging in development
-  browser: {
-    asObject: process.env.NODE_ENV === 'development',
+  warn: (obj: any, msg?: string) => {
+    if (msg) {
+      console.warn(`[${deploymentId}] WARN:`, msg, obj);
+    } else {
+      console.warn(`[${deploymentId}] WARN:`, obj);
+    }
   },
-  // Redact sensitive information
-  redact: {
-    paths: [
-      'apiKey',
-      'password',
-      'token',
-      'secret',
-      'authorization',
-      '*.apiKey',
-      '*.password',
-      '*.token',
-      '*.secret',
-      'api.youtubeApiKey',
-      'req.headers.authorization',
-      'req.headers.cookie',
-    ],
-    remove: true,
+  debug: (obj: any, msg?: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      if (msg) {
+        console.debug(`[${deploymentId}] DEBUG:`, msg, obj);
+      } else {
+        console.debug(`[${deploymentId}] DEBUG:`, obj);
+      }
+    }
   },
-});
+  child: (context: any) => {
+    return {
+      ...logger,
+      info: (obj: any, msg?: string) => {
+        if (msg) {
+          console.log(`[${deploymentId}] ${context?.context || 'unknown'} INFO:`, msg, obj);
+        } else {
+          console.log(`[${deploymentId}] ${context?.context || 'unknown'} INFO:`, obj);
+        }
+      },
+      error: (obj: any, msg?: string) => {
+        if (msg) {
+          console.error(`[${deploymentId}] ${context?.context || 'unknown'} ERROR:`, msg, obj);
+        } else {
+          console.error(`[${deploymentId}] ${context?.context || 'unknown'} ERROR:`, obj);
+        }
+      },
+      warn: (obj: any, msg?: string) => {
+        if (msg) {
+          console.warn(`[${deploymentId}] ${context?.context || 'unknown'} WARN:`, msg, obj);
+        } else {
+          console.warn(`[${deploymentId}] ${context?.context || 'unknown'} WARN:`, obj);
+        }
+      },
+      debug: (obj: any, msg?: string) => {
+        if (process.env.NODE_ENV === 'development') {
+          if (msg) {
+            console.debug(`[${deploymentId}] ${context?.context || 'unknown'} DEBUG:`, msg, obj);
+          } else {
+            console.debug(`[${deploymentId}] ${context?.context || 'unknown'} DEBUG:`, obj);
+          }
+        }
+      },
+    };
+  },
+};
 
 /**
  * Get a child logger with additional context

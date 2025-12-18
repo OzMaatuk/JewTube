@@ -73,8 +73,8 @@ export class ContentService {
    */
   async refreshContent(): Promise<void> {
     const { revalidateTag } = await import('next/cache');
-    revalidateTag('videos');
-    revalidateTag(`deployment:${this.config.deployment.id}`);
+    revalidateTag('videos', 'fetch');
+    revalidateTag(`deployment:${this.config.deployment.id}`, 'fetch');
     logger.info('Content cache invalidated');
   }
 

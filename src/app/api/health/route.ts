@@ -2,6 +2,9 @@ import { getRedisClient } from '@/lib/cache';
 import { getConfig } from '@/lib/config';
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/health
  * Health check endpoint for monitoring

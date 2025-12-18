@@ -1,6 +1,5 @@
 'use client';
 
-import { logger } from '@/lib/logger';
 import { useEffect } from 'react';
 
 export default function ErrorPage({
@@ -10,21 +9,19 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // Log error to logging service
-    logger.error(
-      {
-        error: {
-          name: error.name,
-          message: error.message,
-          digest: error.digest,
-          stack: error.stack,
-        },
-        category: 'page-error',
+  // Log error to logging service
+  console.error(
+    {
+      error: {
+        name: error.name,
+        message: error.message,
+        digest: error.digest,
+        stack: error.stack,
       },
-      'Page error occurred'
-    );
-  }, [error]);
+      category: 'page-error',
+    },
+    'Page error occurred'
+  );
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom, #fef2f2, #ffffff, #f0fdf4)', padding: '16px' }}>

@@ -2,16 +2,6 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Use Turbopack for faster builds
-  // turbopack: {
-  //   rules: {
-  //     '*.svg': {
-  //       loaders: ['@svgr/webpack'],
-  //       as: '*.js',
-  //     },
-  //   },
-  // },
-
   // Standalone output for Docker
   // output: 'standalone',
 
