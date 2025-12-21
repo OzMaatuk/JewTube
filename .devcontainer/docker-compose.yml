@@ -14,8 +14,6 @@ services:
       - ../.git:/workspace/.git:cached
     command: sleep infinity
     network_mode: service:redis
-    environment:
-      - NODE_ENV=development
 
   redis:
     image: redis:7-alpine
