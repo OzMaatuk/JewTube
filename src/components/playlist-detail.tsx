@@ -87,6 +87,29 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
         <p style={{ fontSize: '16px', color: '#6b7280' }}>
           {playlist.videos.length} video{playlist.videos.length !== 1 ? 's' : ''}
         </p>
+        {videos.length > 0 && (
+          <div style={{ marginTop: '16px' }}>
+            <Link href={`/video/${videos[0].id}?playlist=${playlistId}&index=0`}>
+              <button
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#2563eb')}
+                onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = '#3b82f6')}
+              >
+                ▶️ Play All
+              </button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {videos.length === 0 ? (
@@ -116,6 +139,7 @@ export function PlaylistDetail({ playlistId }: { playlistId: string }) {
           videos={videos}
           showRemoveFromPlaylist={true}
           onRemoveFromPlaylist={handleRemoveVideo}
+          playlistId={playlistId}
         />
       )}
     </div>

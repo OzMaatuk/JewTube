@@ -5,9 +5,10 @@ interface VideoGridProps {
   videos: Video[];
   showRemoveFromPlaylist?: boolean;
   onRemoveFromPlaylist?: (videoId: string) => void;
+  playlistId?: string;
 }
 
-export function VideoGrid({ videos, showRemoveFromPlaylist, onRemoveFromPlaylist }: VideoGridProps) {
+export function VideoGrid({ videos, showRemoveFromPlaylist, onRemoveFromPlaylist, playlistId }: VideoGridProps) {
   if (videos.length === 0) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', backgroundColor: 'white', padding: '64px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
@@ -20,12 +21,14 @@ export function VideoGrid({ videos, showRemoveFromPlaylist, onRemoveFromPlaylist
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
-      {videos.map((video) => (
+      {videos.map((video, index) => (
         <VideoCard
           key={video.id}
           video={video}
           showRemoveFromPlaylist={showRemoveFromPlaylist}
           onRemoveFromPlaylist={onRemoveFromPlaylist}
+          playlistId={playlistId}
+          playlistIndex={index}
         />
       ))}
     </div>

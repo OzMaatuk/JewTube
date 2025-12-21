@@ -10,9 +10,11 @@ interface VideoCardProps {
   video: Video;
   showRemoveFromPlaylist?: boolean;
   onRemoveFromPlaylist?: (videoId: string) => void;
+  playlistId?: string;
+  playlistIndex?: number;
 }
 
-export function VideoCard({ video, showRemoveFromPlaylist, onRemoveFromPlaylist }: VideoCardProps) {
+export function VideoCard({ video, showRemoveFromPlaylist, onRemoveFromPlaylist, playlistId, playlistIndex }: VideoCardProps) {
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [playlists, setPlaylists] = useState(() => PlaylistManager.getPlaylists());
 
@@ -43,7 +45,7 @@ export function VideoCard({ video, showRemoveFromPlaylist, onRemoveFromPlaylist 
       }}
     >
       <Link
-        href={`/video/${video.id}`}
+        href={playlistId && playlistIndex !== undefined ? `/video/${video.id}?playlist=${playlistId}&index=${playlistIndex}` : `/video/${video.id}`}
         style={{
           display: 'block',
           textDecoration: 'none',
@@ -130,12 +132,12 @@ export function VideoCard({ video, showRemoveFromPlaylist, onRemoveFromPlaylist 
                   overflowY: 'auto',
                 }}
               >
-                {playlists.length === 0 ? (
+                {playlists.filter(playlist => !playlist.videos.includes(video.id)).length === 0 ? (
                   <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280' }}>
-                    No playlists yet
+                    No playlists available
                   </div>
                 ) : (
-                  playlists.map((playlist) => (
+                  playlists.filter(playlist => !playlist.videos.includes(video.id)).map((playlist) => (
                     <button
                       key={playlist.id}
                       onClick={(e) => {

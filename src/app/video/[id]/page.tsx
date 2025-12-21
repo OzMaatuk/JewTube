@@ -28,8 +28,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function VideoPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function VideoPage({ 
+  params, 
+  searchParams 
+}: { 
+  params: Promise<{ id: string }>; 
+  searchParams: Promise<{ playlist?: string; index?: string }> 
+}) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const contentService = getContentService();
   const video = await contentService.getVideoById(resolvedParams.id);
 
@@ -37,12 +44,19 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
     notFound();
   }
 
+  const playlistId = resolvedSearchParams.playlist;
+  const currentIndex = resolvedSearchParams.index ? parseInt(resolvedSearchParams.index, 10) : undefined;
+
   return (
     <>
       <Header />
       <main style={{ flex: 1, background: 'linear-gradient(to bottom, #f0f9ff, #ffffff, #f0fdf4)' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', paddingTop: '32px', paddingBottom: '32px' }}>
-          <VideoPlayer video={video} />
+          <VideoPlayer 
+            video={video} 
+            playlistId={playlistId} 
+            currentIndex={currentIndex} 
+          />
         </div>
       </main>
       <Footer />

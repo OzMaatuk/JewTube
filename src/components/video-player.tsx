@@ -1,22 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatDate, formatNumber } from '@/lib/utils';
 import { PlaylistManager } from '@/lib/playlist-manager';
 import type { Video } from '@/types';
 
 interface VideoPlayerProps {
   video: Video;
+  playlistId?: string;
+  currentIndex?: number;
 }
 
-export function VideoPlayer({ video }: VideoPlayerProps) {
+export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProps) {
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [playlists, setPlaylists] = useState(() => PlaylistManager.getPlaylists());
+  const router = useRouter();
 
   const handleAddToPlaylist = (playlistId: string) => {
     PlaylistManager.addVideoToPlaylist(playlistId, video.id);
     setShowPlaylistMenu(false);
     // Could add a toast notification here
+  };
+
+  const handleNextVideo = () => {
+    if (!playlistId || currentIndex === undefined) return;
+    
+    const playlist = PlaylistManager.getPlaylistById(playlistId);
+    if (!playlist) return;
+    
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < playlist.videos.length) {
+      const nextVideoId = playlist.videos[nextIndex];
+      router.push(`/video/${nextVideoId}?playlist=${playlistId}&index=${nextIndex}`);
+    }
+  };
+
+  const handlePreviousVideo = () => {
+    if (!playlistId || currentIndex === undefined || currentIndex === 0) return;
+    
+    const playlist = PlaylistManager.getPlaylistById(playlistId);
+    if (!playlist) return;
+    
+    const prevIndex = currentIndex - 1;
+    const prevVideoId = playlist.videos[prevIndex];
+    router.push(`/video/${prevVideoId}?playlist=${playlistId}&index=${prevIndex}`);
   };
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
@@ -35,6 +63,11 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
       <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', lineHeight: '1.3' }}>{video.title}</h1>
+          {playlistId && currentIndex !== undefined && (
+            <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
+              Playing from playlist • Video {currentIndex + 1} of {PlaylistManager.getPlaylistById(playlistId)?.videos.length || 0}
+            </p>
+          )}
           <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
             <span>{formatNumber(video.viewCount)} views</span>
             <span>•</span>
@@ -58,6 +91,59 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Playlist navigation */}
+          {playlistId && currentIndex !== undefined && (
+            <>
+              <button
+                onClick={handlePreviousVideo}
+                disabled={currentIndex === 0}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: currentIndex === 0 ? '#e5e7eb' : '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseOver={(e) => {
+                  if (currentIndex !== 0) (e.target as HTMLElement).style.backgroundColor = '#4b5563';
+                }}
+                onMouseOut={(e) => {
+                  if (currentIndex !== 0) (e.target as HTMLElement).style.backgroundColor = '#6b7280';
+                }}
+              >
+                ⏮️ Previous
+              </button>
+              <button
+                onClick={handleNextVideo}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#059669')}
+                onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = '#10b981')}
+              >
+                Next ⏭️
+              </button>
+            </>
+          )}
+
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => {
@@ -100,12 +186,12 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
                   overflowY: 'auto',
                 }}
               >
-                {playlists.length === 0 ? (
+                {playlists.filter(playlist => !playlist.videos.includes(video.id)).length === 0 ? (
                   <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280' }}>
-                    No playlists yet
+                    No playlists available
                   </div>
                 ) : (
-                  playlists.map((playlist) => (
+                  playlists.filter(playlist => !playlist.videos.includes(video.id)).map((playlist) => (
                     <button
                       key={playlist.id}
                       onClick={() => handleAddToPlaylist(playlist.id)}
