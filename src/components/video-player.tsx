@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { formatDate, formatNumber } from '@/lib/utils';
+import { PlaylistManager } from '@/lib/playlist-manager';
 import type { Video } from '@/types';
 
 interface VideoPlayerProps {
@@ -8,6 +10,14 @@ interface VideoPlayerProps {
 }
 
 export function VideoPlayer({ video }: VideoPlayerProps) {
+  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
+  const [playlists, setPlaylists] = useState(() => PlaylistManager.getPlaylists());
+
+  const handleAddToPlaylist = (playlistId: string) => {
+    PlaylistManager.addVideoToPlaylist(playlistId, video.id);
+    setShowPlaylistMenu(false);
+    // Could add a toast notification here
+  };
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
       {/* Video player */}
@@ -43,6 +53,80 @@ export function VideoPlayer({ video }: VideoPlayerProps) {
           <div style={{ flex: 1 }}>
             <h2 style={{ fontWeight: '600', color: '#1f2937' }}>{video.channelName}</h2>
             {video.categoryName && <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>{video.categoryName}</p>}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => {
+                setShowPlaylistMenu(!showPlaylistMenu);
+                setPlaylists(PlaylistManager.getPlaylists());
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#2563eb')}
+              onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = '#3b82f6')}
+            >
+              <span>+</span>
+              Add to Playlist
+            </button>
+            {showPlaylistMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  zIndex: 10,
+                  minWidth: '200px',
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                }}
+              >
+                {playlists.length === 0 ? (
+                  <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280' }}>
+                    No playlists yet
+                  </div>
+                ) : (
+                  playlists.map((playlist) => (
+                    <button
+                      key={playlist.id}
+                      onClick={() => handleAddToPlaylist(playlist.id)}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f3f4f6',
+                      }}
+                      onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#f3f4f6')}
+                      onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = 'transparent')}
+                    >
+                      {playlist.title}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
 
