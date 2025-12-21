@@ -10,6 +10,8 @@ A modular, configuration-driven platform for creating audience-specific YouTube 
 - 📱 **Cross-Platform**: Responsive web app with PWA support
 - 🔒 **Privacy First**: COPPA and GDPR compliant with configurable tracking
 - 🚀 **Free Hosting**: Deploy on Vercel, Cloudflare Pages, or Netlify for $0/month
+- 🔍 **Advanced Search**: Full-text search across video titles, descriptions, channels, and tags
+- 📚 **Personal Playlists**: Create and manage custom video playlists with local storage
 
 ## Quick Start
 
@@ -55,37 +57,37 @@ Create a configuration file in `config/` directory:
 ```yaml
 # config/children.yaml
 deployment:
-  id: "children-content"
-  name: "Kids Safe Videos"
-  domain: "kids.example.com"
+  id: 'children-content'
+  name: 'Kids Safe Videos'
+  domain: 'kids.example.com'
 
 branding:
-  appName: "Kids Safe Videos"
-  logo: "/logos/kids-logo.png"
-  favicon: "/favicons/kids-favicon.ico"
+  appName: 'Kids Safe Videos'
+  logo: '/logos/kids-logo.png'
+  favicon: '/favicons/kids-favicon.ico'
   colorScheme:
-    primary: "#FF6B6B"
-    secondary: "#4ECDC4"
-    background: "#FFFFFF"
-    text: "#2C3E50"
+    primary: '#FF6B6B'
+    secondary: '#4ECDC4'
+    background: '#FFFFFF'
+    text: '#2C3E50'
 
 content:
   refreshInterval: 30
   sources:
-    - type: "channel"
-      id: "UCbCmjCuTUZos6Inko4u57UQ"
+    - type: 'channel'
+      id: 'UCbCmjCuTUZos6Inko4u57UQ'
 
 filters:
   enabled: true
-  sensitivity: "strict"
+  sensitivity: 'strict'
   rules:
-    - id: "kids-only"
-      type: "content"
+    - id: 'kids-only'
+      type: 'content'
       conditions:
-        - field: "madeForKids"
-          operator: "equals"
+        - field: 'madeForKids'
+          operator: 'equals'
           value: true
-      action: "allow"
+      action: 'allow'
 ```
 
 ### Development

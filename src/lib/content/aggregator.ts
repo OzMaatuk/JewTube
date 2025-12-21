@@ -84,10 +84,10 @@ export class ContentAggregator {
    * Get videos with pagination
    */
   async getVideos(params: VideoQueryParams = {}): Promise<Video[]> {
-    const { page = 1, limit = 20, category } = params;
+    const { page = 1, limit = 20, category, q } = params;
 
     // Try to get from cache first
-    const cacheKey = `videos:${page}:${limit}:${category || 'all'}`;
+    const cacheKey = `videos:${page}:${limit}:${category || 'all'}:${q || ''}`;
     const cached = await cache.get<Video[]>(cacheKey, this.config.deployment.id);
 
     if (cached) {
@@ -102,6 +102,17 @@ export class ContentAggregator {
     let filteredVideos = allVideos;
     if (category) {
       filteredVideos = allVideos.filter((video) => video.categoryName === category);
+    }
+
+    // Filter by search query if specified
+    if (q) {
+      const query = q.toLowerCase();
+      filteredVideos = filteredVideos.filter((video) =>
+        video.title.toLowerCase().includes(query) ||
+        video.description.toLowerCase().includes(query) ||
+        video.channelName.toLowerCase().includes(query) ||
+        video.tags.some(tag => tag.toLowerCase().includes(query))
+      );
     }
 
     // Apply pagination

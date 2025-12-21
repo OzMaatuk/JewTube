@@ -3,9 +3,11 @@ import { VideoCard } from './video-card';
 
 interface VideoGridProps {
   videos: Video[];
+  showRemoveFromPlaylist?: boolean;
+  onRemoveFromPlaylist?: (videoId: string) => void;
 }
 
-export function VideoGrid({ videos }: VideoGridProps) {
+export function VideoGrid({ videos, showRemoveFromPlaylist, onRemoveFromPlaylist }: VideoGridProps) {
   if (videos.length === 0) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '16px', backgroundColor: 'white', padding: '64px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
@@ -19,7 +21,12 @@ export function VideoGrid({ videos }: VideoGridProps) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
       {videos.map((video) => (
-        <VideoCard key={video.id} video={video} />
+        <VideoCard
+          key={video.id}
+          video={video}
+          showRemoveFromPlaylist={showRemoveFromPlaylist}
+          onRemoveFromPlaylist={onRemoveFromPlaylist}
+        />
       ))}
     </div>
   );

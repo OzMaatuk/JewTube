@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const limit = Number.parseInt(searchParams.get('limit') || '20', 10);
     const category = searchParams.get('category') || undefined;
+    const q = searchParams.get('q') || undefined;
+    const ids = searchParams.get('ids')?.split(',').filter(id => id.trim()) || undefined;
 
     // Validate parameters
     if (page < 1 || page > 1000) {
@@ -33,28 +35,43 @@ export async function GET(request: NextRequest) {
     // Get content service
     const contentService = getContentService();
 
-    // Fetch videos
-    const videos = await contentService.getVideos({
-      page,
-      limit,
-      category,
-    });
+    let videos: any[];
+    if (ids) {
+      // Fetch specific videos by IDs
+      const videoPromises = ids.map(id => contentService.getVideoById(id.trim()));
+      const loadedVideos = await Promise.all(videoPromises);
+      videos = loadedVideos.filter(v => v !== null);
+    } else {
+      // Fetch videos with filters
+      videos = await contentService.getVideos({
+        page,
+        limit,
+        category,
+        q,
+      });
+    }
 
     const duration = Date.now() - start;
     logApiCall('/api/videos', 'GET', 200, duration, {
       page,
       limit,
       category,
+      q,
+      ids: ids?.length,
       count: videos.length,
     });
 
-    return NextResponse.json({
-      videos,
-      page,
-      limit,
-      total: videos.length,
-      hasMore: videos.length === limit,
-    });
+    if (ids) {
+      return NextResponse.json({ videos });
+    } else {
+      return NextResponse.json({
+        videos,
+        page,
+        limit,
+        total: videos.length,
+        hasMore: videos.length === limit,
+      });
+    }
   } catch (error) {
     const duration = Date.now() - start;
     const statusCode = error instanceof ValidationError ? 400 : 500;

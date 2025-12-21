@@ -63,6 +63,16 @@ export interface Playlist {
   publishedAt: Date;
 }
 
+// User-created playlists
+export interface UserPlaylist {
+  id: string;
+  title: string;
+  description: string;
+  videos: string[]; // video IDs
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Configuration models
 export interface DeploymentConfig {
   deployment: {
@@ -150,4 +160,5 @@ export interface VideoQueryParams {
   page?: number;
   limit?: number;
   category?: string;
+  q?: string;
 }

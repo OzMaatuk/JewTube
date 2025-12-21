@@ -16,9 +16,9 @@ Identifies the deployment instance.
 
 ```yaml
 deployment:
-  id: "unique-deployment-id"      # Lowercase alphanumeric with hyphens
-  name: "Display Name"             # Human-readable name
-  domain: "example.com"            # Domain where deployed
+  id: 'unique-deployment-id' # Lowercase alphanumeric with hyphens
+  name: 'Display Name' # Human-readable name
+  domain: 'example.com' # Domain where deployed
 ```
 
 ### Branding
@@ -27,16 +27,16 @@ Customizes the visual appearance.
 
 ```yaml
 branding:
-  appName: "My Video App"
-  logo: "/logos/logo.png"
-  favicon: "/favicons/favicon.ico"
+  appName: 'My Video App'
+  logo: '/logos/logo.png'
+  favicon: '/favicons/favicon.ico'
   colorScheme:
-    primary: "#FF6B6B"             # Main brand color
-    secondary: "#4ECDC4"           # Secondary color
-    background: "#FFFFFF"          # Background color
-    text: "#2C3E50"                # Text color
-    accent: "#FFD93D"              # Accent color
-  customCSS: |                     # Optional custom CSS
+    primary: '#FF6B6B' # Main brand color
+    secondary: '#4ECDC4' # Secondary color
+    background: '#FFFFFF' # Background color
+    text: '#2C3E50' # Text color
+    accent: '#FFD93D' # Accent color
+  customCSS: | # Optional custom CSS
     .custom-class { color: red; }
 ```
 
@@ -46,23 +46,23 @@ Defines video sources and refresh behavior.
 
 ```yaml
 content:
-  refreshInterval: 30              # Minutes between content updates (5-1440)
-  manualApprovalMode: false        # Require manual approval for new videos
+  refreshInterval: 30 # Minutes between content updates (5-1440)
+  manualApprovalMode: false # Require manual approval for new videos
   sources:
-    - type: "channel"              # YouTube channel
-      id: "UCChannelID"
-    
-    - type: "playlist"             # YouTube playlist
-      id: "PLPlaylistID"
-    
-    - type: "video"                # Individual video
-      id: "VideoID"
-    
-    - type: "search"               # Search query
+    - type: 'channel' # YouTube channel
+      id: 'UCChannelID'
+
+    - type: 'playlist' # YouTube playlist
+      id: 'PLPlaylistID'
+
+    - type: 'video' # Individual video
+      id: 'VideoID'
+
+    - type: 'search' # Search query
       params:
-        q: "search terms"
+        q: 'search terms'
         maxResults: 50
-        videoDuration: "short"     # short, medium, long
+        videoDuration: 'short' # short, medium, long
 ```
 
 ### Filters
@@ -72,17 +72,17 @@ Controls content filtering.
 ```yaml
 filters:
   enabled: true
-  sensitivity: "strict"            # strict, moderate, permissive
-  dryRunMode: false                # Log filters without applying
+  sensitivity: 'strict' # strict, moderate, permissive
+  dryRunMode: false # Log filters without applying
   rules:
-    - id: "unique-rule-id"
-      type: "metadata"             # See filter types below
+    - id: 'unique-rule-id'
+      type: 'metadata' # See filter types below
       conditions:
-        - field: "duration"
-          operator: "lt"           # equals, contains, regex, gt, lt, in
+        - field: 'duration'
+          operator: 'lt' # equals, contains, regex, gt, lt, in
           value: 600
-      action: "block"              # block or allow
-      logic: "AND"                 # AND or OR (for multiple conditions)
+      action: 'block' # block or allow
+      logic: 'AND' # AND or OR (for multiple conditions)
 ```
 
 #### Filter Types
@@ -104,14 +104,14 @@ Compliance and privacy settings.
 
 ```yaml
 privacy:
-  coppaCompliant: true             # COPPA compliance for children
-  gdprCompliant: true              # GDPR compliance
-  disableTracking: false           # Disable all analytics
+  coppaCompliant: true # COPPA compliance for children
+  gdprCompliant: true # GDPR compliance
+  disableTracking: false # Disable all analytics
   ageGate:
     enabled: true
     minimumAge: 13
-    verificationMethod: "simple"   # simple or date-of-birth
-    redirectUrl: "https://..."     # Optional redirect for underage
+    verificationMethod: 'simple' # simple or date-of-birth
+    redirectUrl: 'https://...' # Optional redirect for underage
 ```
 
 ### Features
@@ -120,10 +120,10 @@ Enable/disable platform features.
 
 ```yaml
 features:
-  enableSearch: false              # Allow users to search
-  enableComments: false            # Show video comments
-  enableSharing: true              # Allow sharing videos
-  enablePlaylists: false           # Enable playlist creation
+  enableSearch: true # Allow users to search videos (now implemented)
+  enableComments: false # Show video comments (coming soon)
+  enableSharing: true # Allow sharing videos
+  enablePlaylists: true # Enable playlist creation (now implemented)
 ```
 
 ### API
@@ -132,7 +132,7 @@ YouTube API configuration.
 
 ```yaml
 api:
-  youtubeApiKey: "${YOUTUBE_API_KEY}"  # Use env var for security
+  youtubeApiKey: '${YOUTUBE_API_KEY}' # Use env var for security
   rateLimit:
     requestsPerDay: 10000
     requestsPerMinute: 100
@@ -145,10 +145,11 @@ Sensitive data should be stored in environment variables and referenced in confi
 
 ```yaml
 api:
-  youtubeApiKey: "${YOUTUBE_API_KEY}"
+  youtubeApiKey: '${YOUTUBE_API_KEY}'
 ```
 
 **Required Environment Variables:**
+
 - `YOUTUBE_API_KEY` - Your YouTube Data API key
 - `UPSTASH_REDIS_REST_URL` - Redis connection URL (optional)
 - `UPSTASH_REDIS_REST_TOKEN` - Redis auth token (optional)
@@ -168,6 +169,7 @@ In development mode, configuration changes are automatically detected and reload
 ## Examples
 
 See example configurations in the `config/` directory:
+
 - `children.example.yaml` - Kids content
 - `education.example.yaml` - Educational content
 - `religious.example.yaml` - Faith-based content
