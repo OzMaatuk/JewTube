@@ -1,0 +1,56 @@
+# Default Deployment Configuration
+# This is a basic configuration to get started
+
+deployment:
+  id: "default-deployment"
+  name: "Video Platform"
+  domain: "localhost:3000"
+
+branding:
+  appName: "Video Platform"
+  logo: "/logo.svg"
+  favicon: "/favicon.ico"
+  colorScheme:
+    primary: "#3B82F6"
+    secondary: "#10B981"
+    background: "#FFFFFF"
+    text: "#1F2937"
+    accent: "#F59E0B"
+
+content:
+  refreshInterval: 30
+  manualApprovalMode: false
+  sources:
+    - type: "channel"
+      id: "UCbCmjCuTUZos6Inko4u57UQ"  # Example channel
+
+filters:
+  enabled: true
+  sensitivity: "moderate"
+  dryRunMode: false
+  rules:
+    - id: "basic-filter"
+      type: "metadata"
+      conditions:
+        - field: "duration"
+          operator: "lt"
+          value: 3600
+      action: "allow"
+
+privacy:
+  coppaCompliant: false
+  gdprCompliant: true
+  disableTracking: false
+
+features:
+  enableSearch: true
+  enableComments: false
+  enableSharing: true
+  enablePlaylists: true
+
+api:
+  youtubeApiKey: "${YOUTUBE_API_KEY}"
+  rateLimit:
+    requestsPerDay: 10000
+    requestsPerMinute: 100
+    burstLimit: 150
