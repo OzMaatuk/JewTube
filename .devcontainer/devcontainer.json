@@ -13,10 +13,10 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "biomejs.biome-nightly",
-        "ms-azuretools.vscode-docker",
         "redhat.vscode-yaml",
-        "vitest.explorer"
+        "vitest.explorer",
+        "github.copilot-chat",
+        "github.copilot"
       ],
       "settings": {
         "editor.formatOnSave": true,
