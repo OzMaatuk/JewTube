@@ -215,6 +215,8 @@ function extractPartialConfig(rawConfig: unknown): DeploymentConfig | null {
         enableComments: (features?.enableComments as boolean) ?? false,
         enableSharing: (features?.enableSharing as boolean) ?? true,
         enablePlaylists: (features?.enablePlaylists as boolean) ?? false,
+        enableAudioOnly: (features?.enableAudioOnly as boolean) ?? true,
+        hideAudioOnlyButton: (features?.hideAudioOnlyButton as boolean) ?? false,
       },
       api: {
         youtubeApiKey: '__BUILD_PLACEHOLDER_YOUTUBE_API_KEY__',

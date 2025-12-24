@@ -1,5 +1,8 @@
 import type { FilterRule, Video } from '@/types';
 import { BaseFilter } from './base';
+import { getLogger } from '@/lib/logger';
+
+const logger = getLogger('filters');
 
 /**
  * Metadata Filter
@@ -71,8 +74,8 @@ export class ContentFilter extends BaseFilter {
     const fieldMap: Record<string, unknown> = {
       categoryId: video.categoryId,
       categoryName: video.categoryName,
-      madeForKids: video.contentRating.madeForKids,
-      ageRestricted: video.contentRating.ageRestricted,
+      madeForKids: video.contentRating?.madeForKids,
+      ageRestricted: video.contentRating?.ageRestricted,
       hasClosedCaptions: video.hasClosedCaptions,
       defaultLanguage: video.defaultLanguage,
       isLiveContent: video.isLiveContent,
@@ -131,7 +134,12 @@ export class PatternFilter extends BaseFilter {
       const text = String(value || '').toLowerCase();
       
       if (condition.operator === 'regex') {
-        return new RegExp(condition.value, 'i').test(text);
+        try {
+          return new RegExp(String(condition.value), 'i').test(text);
+        } catch (error) {
+          logger.warn({ pattern: condition.value, error }, 'Invalid regex pattern, treating as literal');
+          return text.includes(String(condition.value).toLowerCase());
+        }
       }
       if (condition.operator === 'contains') {
         return text.includes(String(condition.value).toLowerCase());
@@ -190,9 +198,9 @@ export class BehavioralFilter extends BaseFilter {
 
     const fieldMap: Record<string, unknown> = {
       likeRatio,
-      likeCount: video.likeCount,
-      commentCount: video.commentCount,
-      commentsDisabled: video.commentCount === 0,
+      likeCount: video.likeCount || 0,
+      commentCount: video.commentCount || 0,
+      commentsDisabled: !video.commentCount || video.commentCount === 0, // Fallback logic
     };
     return fieldMap[field];
   }

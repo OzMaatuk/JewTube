@@ -101,6 +101,8 @@ features:
   enableComments: false
   enableSharing: true
   enablePlaylists: false
+  enableAudioOnly: true
+  hideAudioOnlyButton: true
 
 api:
   youtubeApiKey: "${YOUTUBE_API_KEY}"

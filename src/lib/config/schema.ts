@@ -89,6 +89,8 @@ export const featuresSchema = z.object({
   enableComments: z.boolean().default(false),
   enableSharing: z.boolean().default(true),
   enablePlaylists: z.boolean().default(false),
+  enableAudioOnly: z.boolean().default(true),
+  hideAudioOnlyButton: z.boolean().default(false),
 });
 
 // Rate limit configuration schema

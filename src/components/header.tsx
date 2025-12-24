@@ -18,6 +18,8 @@ export function Header() {
   const logo = config?.branding.logo;
   const enableSearch = config?.features.enableSearch ?? true; // Default to true
   const enablePlaylists = config?.features.enablePlaylists ?? true; // Default to true
+  const enableAudioOnly = config?.features.enableAudioOnly ?? true; // Default to true
+  const hideAudioOnlyButton = config?.features.hideAudioOnlyButton ?? false; // Default to false
 
   return (
     <HeaderClient
@@ -25,6 +27,8 @@ export function Header() {
       logo={logo}
       enableSearch={enableSearch}
       enablePlaylists={enablePlaylists}
+      enableAudioOnly={enableAudioOnly}
+      hideAudioOnlyButton={hideAudioOnlyButton}
     />
   );
 }

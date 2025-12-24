@@ -1,10 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDate, formatNumber } from '@/lib/utils';
 import { PlaylistManager } from '@/lib/playlist-manager';
+import { useAudioOnly } from '@/lib/audio-only-context';
 import type { Video } from '@/types';
+
+// YouTube API types
+declare global {
+  interface Window {
+    YT: any;
+  }
+}
 
 interface VideoPlayerProps {
   video: Video;
@@ -15,7 +23,224 @@ interface VideoPlayerProps {
 export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProps) {
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [playlists, setPlaylists] = useState(() => PlaylistManager.getPlaylists());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [playerStatus, setPlayerStatus] = useState<'idle' | 'initializing' | 'ready' | 'error'>('idle');
+  const isPlayerReady = playerStatus === 'ready';
+  const isInitializing = playerStatus === 'initializing';
+  const apiLoadError = playerStatus === 'error';
+
   const router = useRouter();
+  const { isAudioOnly } = useAudioOnly();
+
+  // Update player status based on audio-only mode
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPlayerStatus(isAudioOnly ? 'initializing' : 'idle');
+  }, [isAudioOnly]);
+
+  // YouTube iframe API integration
+  useEffect(() => {
+    if (!isAudioOnly) {
+      // Cleanup player when switching away from audio-only mode
+      const player = (window as any).youtubePlayer;
+      if (player && player.destroy) {
+        player.destroy();
+      }
+      return;
+    }
+
+    // Load YouTube IFrame Player API if not already loaded
+    const loadYouTubeAPI = () => {
+      return new Promise<void>((resolve, reject) => {
+        if ((window as any).YT && (window as any).YT.Player) {
+          resolve();
+          return;
+        }
+
+        if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+          // Script is already loading, wait for it
+          const checkReady = () => {
+            if ((window as any).YT && (window as any).YT.Player) {
+              resolve();
+            } else {
+              setTimeout(checkReady, 100);
+            }
+          };
+          checkReady();
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.onload = () => {
+          const checkReady = () => {
+            if ((window as any).YT && (window as any).YT.Player) {
+              resolve();
+            } else {
+              setTimeout(checkReady, 100);
+            }
+          };
+          checkReady();
+        };
+        script.onerror = () => reject(new Error('Failed to load YouTube API'));
+        document.head.appendChild(script);
+
+        // Timeout after 10 seconds
+        setTimeout(() => reject(new Error('YouTube API loading timeout')), 10000);
+      });
+    };
+
+    // Load API and create invisible player
+    loadYouTubeAPI().then(() => {
+      try {
+        // Create an invisible YouTube player
+        const player = new (window as any).YT.Player('youtube-audio-player', {
+          height: '1',
+          width: '1',
+          videoId: video.id,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            enablejsapi: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            showinfo: 0
+          },
+          events: {
+            onReady: (event: any) => {
+              setPlayerStatus('ready');
+              (window as any).youtubePlayer = event.target;
+              // Set initial duration
+              const dur = event.target.getDuration();
+              if (dur && dur > 0) {
+                setDuration(dur);
+              }
+            },
+            onStateChange: (event: any) => {
+              const newIsPlaying = event.data === 1; // 1 = playing
+              setIsPlaying(newIsPlaying);
+
+              // Update duration if not set yet
+              if (event.data === 1 && duration === 0) { // 1 = playing
+                const dur = event.target.getDuration();
+                if (dur && dur > 0) {
+                  setDuration(dur);
+                }
+              }
+            },
+            onError: (event: any) => {
+              console.error('YouTube player error:', event.data);
+              setPlayerStatus('error');
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Failed to create YouTube player:', error);
+        setPlayerStatus('error');
+      }
+    }).catch((error) => {
+      console.error('Failed to load YouTube API:', error);
+      setPlayerStatus('error');
+    });
+
+    return () => {
+      // Cleanup player
+      const player = (window as any).youtubePlayer;
+      if (player && player.destroy) {
+        player.destroy();
+      }
+    };
+  }, [isAudioOnly, video.id]);
+
+  // Update current time while playing
+  useEffect(() => {
+    if (!isPlayerReady || !isPlaying) return;
+
+    const updateTime = () => {
+      try {
+        const player = (window as any).youtubePlayer;
+        if (player && player.getCurrentTime) {
+          const current = player.getCurrentTime();
+          if (current !== undefined && current >= 0) {
+            setCurrentTime(current);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating current time:', error);
+      }
+    };
+
+    // Update immediately
+    updateTime();
+
+    // Update every 500ms while playing
+    const interval = setInterval(updateTime, 500);
+
+    return () => clearInterval(interval);
+  }, [isPlayerReady, isPlaying]);
+
+  const sendToYouTube = (action: string, value?: any) => {
+    if (!isPlayerReady || !(window as any).youtubePlayer) {
+      console.warn('YouTube player not ready');
+      return;
+    }
+
+    try {
+      const player = (window as any).youtubePlayer;
+      switch (action) {
+        case 'playVideo':
+          player.playVideo();
+          break;
+        case 'pauseVideo':
+          player.pauseVideo();
+          break;
+        case 'stopVideo':
+          player.stopVideo();
+          break;
+        case 'seekTo':
+          player.seekTo(value, true);
+          break;
+        case 'setVolume':
+          player.setVolume(value);
+          break;
+        default:
+          console.warn('Unknown YouTube action:', action);
+      }
+    } catch (error) {
+      console.error('Error sending command to YouTube player:', error);
+    }
+  };
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      sendToYouTube('pauseVideo');
+    } else {
+      sendToYouTube('playVideo');
+    }
+  };
+
+  const handleSeek = (time: number) => {
+    sendToYouTube('seekTo', time);
+    setCurrentTime(time); // Update UI immediately
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    sendToYouTube('setVolume', newVolume * 100);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleAddToPlaylist = (playlistId: string) => {
     PlaylistManager.addVideoToPlaylist(playlistId, video.id);
@@ -48,16 +273,113 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
   };
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-      {/* Video player */}
-      <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px', backgroundColor: '#000000' }}>
-        <iframe
-          src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`}
-          title={video.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-        />
-      </div>
+      {/* Video/Audio player */}
+      {isAudioOnly ? (
+        <div style={{ position: 'relative', width: '100%', height: '300px', borderRadius: '12px', backgroundColor: '#1f2937', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          {/* Invisible YouTube player for audio playback */}
+          <div
+            id="youtube-audio-player"
+            style={{
+              position: 'absolute',
+              top: '-9999px',
+              left: '-9999px',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+              pointerEvents: 'none',
+              zIndex: -1
+            }}
+          />
+
+          {/* Audio Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%', maxWidth: '400px' }}>
+            {/* Play/Pause Button */}
+            <button
+              onClick={handlePlayPause}
+              disabled={!isPlayerReady || apiLoadError}
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                backgroundColor: (isPlayerReady && !apiLoadError) ? '#3b82f6' : '#6b7280',
+                border: 'none',
+                color: 'white',
+                fontSize: '24px',
+                cursor: (isPlayerReady && !apiLoadError) ? 'pointer' : 'not-allowed',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.2s',
+                opacity: (isPlayerReady && !apiLoadError) ? 1 : 0.6,
+              }}
+              onMouseOver={(e) => {
+                if (isPlayerReady && !apiLoadError) (e.target as HTMLElement).style.backgroundColor = '#2563eb';
+              }}
+              onMouseOut={(e) => {
+                if (isPlayerReady && !apiLoadError) (e.target as HTMLElement).style.backgroundColor = '#3b82f6';
+              }}
+            >
+              {apiLoadError ? '❌' : (isInitializing ? '⏳' : (isPlaying ? '⏸️' : '▶️'))}
+            </button>
+
+            {/* Progress Bar */}
+            <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', maxWidth: '400px' }}>
+              <span style={{ fontSize: '14px', color: '#9ca3af', minWidth: '40px' }}>{formatTime(currentTime)}</span>
+              <input
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={currentTime}
+                onChange={(e) => handleSeek(Number(e.target.value))}
+                disabled={!isPlayerReady}
+                style={{
+                  flex: 1,
+                  height: '6px',
+                  borderRadius: '3px',
+                  background: '#374151',
+                  outline: 'none',
+                  cursor: isPlayerReady ? 'pointer' : 'not-allowed',
+                  opacity: isPlayerReady ? 1 : 0.6,
+                }}
+              />
+              <span style={{ fontSize: '14px', color: '#9ca3af', minWidth: '40px' }}>{formatTime(duration)}</span>
+            </div>
+
+            {/* Volume Control */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: '200px' }}>
+              <span style={{ fontSize: '14px', color: '#9ca3af' }}>🔊</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={volume}
+                onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                disabled={!isPlayerReady}
+                style={{
+                  flex: 1,
+                  height: '4px',
+                  borderRadius: '2px',
+                  background: '#374151',
+                  outline: 'none',
+                  cursor: isPlayerReady ? 'pointer' : 'not-allowed',
+                  opacity: isPlayerReady ? 1 : 0.6,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px', backgroundColor: '#000000' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`}
+            title={video.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+          />
+        </div>
+      )}
 
       {/* Video info */}
       <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

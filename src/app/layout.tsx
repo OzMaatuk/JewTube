@@ -1,5 +1,6 @@
 import { getConfig } from '@/lib/config';
 import { setDeploymentId } from '@/lib/logger';
+import { AudioOnlyProvider } from '@/lib/audio-only-context';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
@@ -94,7 +95,9 @@ export default function RootLayout({
         )}
       </head>
       <body style={style}>
-        <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>{children}</div>
+        <AudioOnlyProvider>
+          <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>{children}</div>
+        </AudioOnlyProvider>
       </body>
     </html>
   );

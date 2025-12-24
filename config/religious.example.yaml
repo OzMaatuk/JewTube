@@ -54,8 +54,8 @@ filters:
       type: "pattern"
       conditions:
         - field: "description"
-          operator: "regex"
-          value: "(?i)(politics|debate|controversy)"
+          operator: "contains"
+          value: "politics"
       action: "block"
     
     # Family-friendly content only
@@ -67,22 +67,13 @@ filters:
           value: false
       action: "allow"
     
-    # Require high engagement (quality indicator)
-    - id: "high-engagement"
+    # Require minimum engagement (quality indicator)
+    - id: "minimum-engagement"
       type: "behavioral"
       conditions:
-        - field: "likeRatio"
+        - field: "likeCount"
           operator: "gt"
-          value: 0.9
-      action: "allow"
-    
-    # Block videos with disabled comments
-    - id: "comments-enabled"
-      type: "behavioral"
-      conditions:
-        - field: "commentsDisabled"
-          operator: "equals"
-          value: false
+          value: 10
       action: "allow"
 
 privacy:
@@ -97,6 +88,8 @@ features:
   enableComments: false
   enableSharing: true
   enablePlaylists: true
+  enableAudioOnly: true
+  hideAudioOnlyButton: false
 
 api:
   youtubeApiKey: "${YOUTUBE_API_KEY}"

@@ -116,11 +116,15 @@ export class FilterEngine {
         logger.error(
           {
             ruleId: rule.id,
+            ruleType: rule.type,
             videoId: video.id,
             error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined,
           },
           'Filter evaluation error'
         );
+        // Continue with other rules instead of failing completely
+        continue;
       }
     }
 

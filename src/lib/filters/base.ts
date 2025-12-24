@@ -34,6 +34,8 @@ export abstract class BaseFilter implements IFilter {
   protected checkCondition(value: unknown, operator: string, expected: unknown): boolean {
     switch (operator) {
       case 'equals':
+        if (value == null && expected == null) return true;
+        if (value == null || expected == null) return false;
         return value === expected;
 
       case 'contains':
@@ -52,9 +54,11 @@ export abstract class BaseFilter implements IFilter {
         return false;
 
       case 'gt':
+        if (value == null) return false;
         return Number(value) > Number(expected);
 
       case 'lt':
+        if (value == null) return false;
         return Number(value) < Number(expected);
 
       case 'in':
