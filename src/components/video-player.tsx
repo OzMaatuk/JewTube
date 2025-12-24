@@ -400,6 +400,77 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
                 <span>👍 {formatNumber(video.likeCount)}</span>
               </>
             )}
+            <span>•</span>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => {
+                  setShowPlaylistMenu(!showPlaylistMenu);
+                  setPlaylists(PlaylistManager.getPlaylists());
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#6b7280',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#e5e7eb')}
+                onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = '#f3f4f6')}
+              >
+                <span>+</span>
+                Add to Playlist
+              </button>
+              {showPlaylistMenu && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    zIndex: 10,
+                    minWidth: '200px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {playlists.filter(playlist => !playlist.videos.includes(video.id)).length === 0 ? (
+                    <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280' }}>
+                      No playlists available
+                    </div>
+                  ) : (
+                    playlists.filter(playlist => !playlist.videos.includes(video.id)).map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        onClick={() => handleAddToPlaylist(playlist.id)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          backgroundColor: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #f3f4f6',
+                        }}
+                        onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#f3f4f6')}
+                        onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = 'transparent')}
+                      >
+                        {playlist.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -466,76 +537,6 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
             </>
           )}
 
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => {
-                setShowPlaylistMenu(!showPlaylistMenu);
-                setPlaylists(PlaylistManager.getPlaylists());
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#2563eb')}
-              onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = '#3b82f6')}
-            >
-              <span>+</span>
-              Add to Playlist
-            </button>
-            {showPlaylistMenu && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  zIndex: 10,
-                  minWidth: '200px',
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                }}
-              >
-                {playlists.filter(playlist => !playlist.videos.includes(video.id)).length === 0 ? (
-                  <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280' }}>
-                    No playlists available
-                  </div>
-                ) : (
-                  playlists.filter(playlist => !playlist.videos.includes(video.id)).map((playlist) => (
-                    <button
-                      key={playlist.id}
-                      onClick={() => handleAddToPlaylist(playlist.id)}
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid #f3f4f6',
-                      }}
-                      onMouseOver={(e) => ((e.target as HTMLElement).style.backgroundColor = '#f3f4f6')}
-                      onMouseOut={(e) => ((e.target as HTMLElement).style.backgroundColor = 'transparent')}
-                    >
-                      {playlist.title}
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Description */}
