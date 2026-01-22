@@ -37,15 +37,17 @@ export function getRedisClient(): Redis | null {
 }
 
 /**
- * Redis cache service
+ * Redis cache service with in-memory fallback
  */
 export class RedisCache {
   private redis: Redis | null;
   private prefix: string;
+  private memoryCache: Map<string, { value: any; expires: number }>;
 
   constructor(prefix = 'ytw') {
     this.redis = getRedisClient();
     this.prefix = prefix;
+    this.memoryCache = new Map();
   }
 
   /**
@@ -62,34 +64,59 @@ export class RedisCache {
    * Get value from cache
    */
   async get<T>(key: string, deploymentId?: string): Promise<T | null> {
-    if (!this.redis) return null;
-
     const fullKey = this.getKey(key, deploymentId);
 
-    try {
-      const value = await this.redis.get<T>(fullKey);
-      logCacheOperation(value ? 'hit' : 'miss', fullKey);
-      return value;
-    } catch (error) {
-      logger.error({ error, key: fullKey }, 'Cache get error');
-      return null;
+    if (this.redis) {
+      try {
+        const value = await this.redis.get<T>(fullKey);
+        logCacheOperation(value ? 'hit' : 'miss', fullKey);
+        return value;
+      } catch (error) {
+        logger.error({ error, key: fullKey }, 'Cache get error');
+        // Fallback to memory if redis fails
+      }
     }
+
+    // Memory fallback
+    const cached = this.memoryCache.get(fullKey);
+    if (cached) {
+      if (Date.now() < cached.expires) {
+        logCacheOperation('hit (memory)', fullKey);
+        return cached.value;
+      }
+      this.memoryCache.delete(fullKey);
+    }
+
+    logCacheOperation('miss', fullKey);
+    return null;
   }
 
   /**
    * Set value in cache with TTL
    */
   async set<T>(key: string, value: T, ttl = 3600, deploymentId?: string): Promise<void> {
-    if (!this.redis) return;
-
     const fullKey = this.getKey(key, deploymentId);
 
-    try {
-      await this.redis.setex(fullKey, ttl, JSON.stringify(value));
-      logCacheOperation('set', fullKey, { ttl });
-    } catch (error) {
-      logger.error({ error, key: fullKey }, 'Cache set error');
-      throw new CacheError('Failed to set cache value', 'set');
+    if (this.redis) {
+      try {
+        await this.redis.setex(fullKey, ttl, JSON.stringify(value));
+        logCacheOperation('set', fullKey, { ttl });
+      } catch (error) {
+        logger.error({ error, key: fullKey }, 'Cache set error');
+        // Still set in memory even if redis fails
+      }
+    }
+
+    // Always set in memory as secondary/primary cache
+    this.memoryCache.set(fullKey, {
+      value,
+      expires: Date.now() + ttl * 1000
+    });
+
+    // Cleanup memory cache if it gets too large
+    if (this.memoryCache.size > 1000) {
+      const oldestKey = this.memoryCache.keys().next().value;
+      if (oldestKey) this.memoryCache.delete(oldestKey);
     }
   }
 
@@ -97,34 +124,44 @@ export class RedisCache {
    * Delete value from cache
    */
   async delete(key: string, deploymentId?: string): Promise<void> {
-    if (!this.redis) return;
-
     const fullKey = this.getKey(key, deploymentId);
 
-    try {
-      await this.redis.del(fullKey);
-      logCacheOperation('delete', fullKey);
-    } catch (error) {
-      logger.error({ error, key: fullKey }, 'Cache delete error');
+    if (this.redis) {
+      try {
+        await this.redis.del(fullKey);
+        logCacheOperation('delete', fullKey);
+      } catch (error) {
+        logger.error({ error, key: fullKey }, 'Cache delete error');
+      }
     }
+
+    this.memoryCache.delete(fullKey);
   }
 
   /**
    * Delete multiple keys by pattern
    */
   async deletePattern(pattern: string, deploymentId?: string): Promise<void> {
-    if (!this.redis) return;
-
     const fullPattern = this.getKey(pattern, deploymentId);
 
-    try {
-      const keys = await this.redis.keys(fullPattern);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-        logCacheOperation('delete', fullPattern, { count: keys.length });
+    if (this.redis) {
+      try {
+        const keys = await this.redis.keys(fullPattern);
+        if (keys.length > 0) {
+          await this.redis.del(...keys);
+          logCacheOperation('delete (pattern)', fullPattern, { count: keys.length });
+        }
+      } catch (error) {
+        logger.error({ error, pattern: fullPattern }, 'Cache delete pattern error');
       }
-    } catch (error) {
-      logger.error({ error, pattern: fullPattern }, 'Cache delete pattern error');
+    }
+
+    // Memory cleanup for pattern (limited simple implementation)
+    const regexPattern = new RegExp('^' + fullPattern.replace(/\*/g, '.*') + '$');
+    for (const key of this.memoryCache.keys()) {
+      if (regexPattern.test(key)) {
+        this.memoryCache.delete(key);
+      }
     }
   }
 
@@ -132,17 +169,19 @@ export class RedisCache {
    * Check if key exists
    */
   async exists(key: string, deploymentId?: string): Promise<boolean> {
-    if (!this.redis) return false;
-
     const fullKey = this.getKey(key, deploymentId);
 
-    try {
-      const result = await this.redis.exists(fullKey);
-      return result === 1;
-    } catch (error) {
-      logger.error({ error, key: fullKey }, 'Cache exists error');
-      return false;
+    if (this.redis) {
+      try {
+        const result = await this.redis.exists(fullKey);
+        return result === 1;
+      } catch (error) {
+        logger.error({ error, key: fullKey }, 'Cache exists error');
+      }
     }
+
+    const cached = this.memoryCache.get(fullKey);
+    return !!(cached && Date.now() < cached.expires);
   }
 
   /**
@@ -173,31 +212,44 @@ export class RedisCache {
    * Increment counter
    */
   async increment(key: string, deploymentId?: string): Promise<number> {
-    if (!this.redis) return 0;
-
     const fullKey = this.getKey(key, deploymentId);
 
-    try {
-      return await this.redis.incr(fullKey);
-    } catch (error) {
-      logger.error({ error, key: fullKey }, 'Cache increment error');
-      return 0;
+    if (this.redis) {
+      try {
+        return await this.redis.incr(fullKey);
+      } catch (error) {
+        logger.error({ error, key: fullKey }, 'Cache increment error');
+      }
     }
+
+    // Simple memory increment
+    const cached = this.memoryCache.get(fullKey);
+    const newValue = (cached ? Number(cached.value) : 0) + 1;
+    this.memoryCache.set(fullKey, {
+      value: newValue,
+      expires: Date.now() + 3600 * 1000 // Default 1h
+    });
+    return newValue;
   }
 
   /**
    * Get cache statistics
    */
-  async getStats(): Promise<{ keys: number }> {
-    if (!this.redis) return { keys: 0 };
-
-    try {
-      const keys = await this.redis.keys(`${this.prefix}:*`);
-      return { keys: keys.length };
-    } catch (error) {
-      logger.error({ error }, 'Failed to get cache stats');
-      return { keys: 0 };
+  async getStats(): Promise<{ keys: number; memoryKeys: number }> {
+    let redisKeys = 0;
+    if (this.redis) {
+      try {
+        const keys = await this.redis.keys(`${this.prefix}:*`);
+        redisKeys = keys.length;
+      } catch (error) {
+        logger.error({ error }, 'Failed to get cache stats');
+      }
     }
+
+    return {
+      keys: redisKeys,
+      memoryKeys: this.memoryCache.size
+    };
   }
 }
 
