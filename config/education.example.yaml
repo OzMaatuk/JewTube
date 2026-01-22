@@ -8,8 +8,8 @@ deployment:
 
 branding:
   appName: "EduStream"
-  logo: "/public/logos/edu-logo.png"
-  favicon: "/public/favicons/edu-favicon.ico"
+  logo: "/logos/edu-logo.png"
+  favicon: "/favicons/edu-favicon.ico"
   colorScheme:
     primary: "#3B82F6"
     secondary: "#8B5CF6"
