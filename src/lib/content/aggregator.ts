@@ -3,6 +3,7 @@ import { getLogger, logPerformance } from '@/lib/logger';
 import type { DeploymentConfig, ContentItem, VideoQueryParams } from '@/types';
 import { contentSourceRegistry } from './content-source';
 import { YouTubeVideoSource } from './youtube-source';
+import { VimeoContentSource } from './vimeo-source';
 
 const logger = getLogger('content-aggregator');
 
@@ -20,6 +21,15 @@ export class ContentAggregator {
     // In the future, this could be dynamic or plugin-based
     const youtubeSource = new YouTubeVideoSource(config.api.youtubeApiKey);
     contentSourceRegistry.register(youtubeSource);
+    console.log('[Aggregator] Registered YouTube adapter');
+
+    if (config.api.vimeoAccessToken) {
+      const vimeoSource = new VimeoContentSource(config.api.vimeoAccessToken);
+      contentSourceRegistry.register(vimeoSource);
+      console.log('[Aggregator] Registered Vimeo adapter');
+    } else {
+      console.warn('[Aggregator] Vimeo access token missing, skipping adapter');
+    }
   }
 
   /**
@@ -109,11 +119,13 @@ export class ContentAggregator {
     const cached = await cache.get<ContentItem[]>(cacheKey, this.config.deployment.id);
 
     if (cached) {
+      console.log(`[Aggregator] Returning ${cached.length} cached items for ${cacheKey}`);
       logger.debug({ cacheKey }, 'Returning cached content');
       return cached;
     }
 
     // Fetch fresh content
+    console.log(`[Aggregator] Fetching fresh content for ${cacheKey}`);
     const allItems = await this.aggregateContent();
 
     // Filter by category if specified
@@ -165,21 +177,32 @@ export class ContentAggregator {
       return cached;
     }
 
-    // Since we don't know the source of an arbitrary ID (unless we encode it in ID),
-    // we might need to query all adapters or rely on the fact that IDs are unique enough?
-    // OR we assume we can ask any adapter?
-    // Current implementation of getVideoById in original code asked `this.videoSource.fetchVideoDetails`.
-    // But now we have multiple sources.
-    // If ID is valid YouTube ID, YouTube adapter might return it.
-    // Strategy: ask all registered adapters until one returns it? Or check ID format?
-    // Ideally, we should know the platform from the ID context, but here we only have ID.
-    // For now, iterate all adapters.
+    // Heuristic to decide which platform to try first
+    const isNumericOnly = /^\d+$/.test(itemId);
+    const isYouTubeId = itemId.length === 11 || itemId.startsWith('UC') || itemId.startsWith('PL');
+
+    // Sort providers so we hit the most likely one first
+    const sortedProviders = contentSourceRegistry.getProviderNames().sort((a, b) => {
+      if (isNumericOnly) return a === 'vimeo' ? -1 : 1;
+      if (isYouTubeId) return a === 'youtube' ? -1 : 1;
+      return 0;
+    });
 
     try {
-      for (const providerName of contentSourceRegistry.getProviderNames()) {
+      for (const providerName of sortedProviders) {
         const adapter = contentSourceRegistry.get(providerName);
         if (adapter) {
           try {
+            // Only try adapter if it's likely to have this ID or if heuristic is uncertain
+            const likelyMatch = (providerName === 'vimeo' && isNumericOnly) ||
+              (providerName === 'youtube' && isYouTubeId) ||
+              (!isNumericOnly && !isYouTubeId);
+
+            if (!likelyMatch && sortedProviders.length > 1) {
+              // If it's clearly the OTHER platform's ID, skip this one
+              continue;
+            }
+
             const item = await adapter.fetchItemDetails(itemId);
             if (item) {
               // Cache for 10 minutes

@@ -127,6 +127,7 @@ export interface DeploymentConfig {
 
   api: {
     youtubeApiKey: string;
+    vimeoAccessToken?: string;
     rateLimit: RateLimitConfig;
   };
 }

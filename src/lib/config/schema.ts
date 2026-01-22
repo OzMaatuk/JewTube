@@ -108,7 +108,7 @@ export const apiSchema = z.object({
     .string()
     .min(1, 'YouTube API key is required')
     .refine(
-      (val) => {
+      (val: string) => {
         // Allow placeholder values during build time
         if (val.startsWith('__BUILD_PLACEHOLDER_')) {
           return true;
@@ -117,6 +117,7 @@ export const apiSchema = z.object({
       },
       { message: 'YouTube API key is required' }
     ),
+  vimeoAccessToken: z.string().optional(),
   rateLimit: rateLimitSchema.default({
     requestsPerDay: 10000,
     requestsPerMinute: 100,

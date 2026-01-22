@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDate, formatNumber } from '@/lib/utils';
 import { PlaylistManager } from '@/lib/playlist-manager';
@@ -11,6 +11,9 @@ import type { Video } from '@/types';
 declare global {
   interface Window {
     YT: any;
+    youtubePlayer: any;
+    Vimeo: any;
+    vimeoPlayer: any;
   }
 }
 
@@ -34,140 +37,236 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
 
   const router = useRouter();
   const { isAudioOnly } = useAudioOnly();
+  const playerRef = useRef<any>(null);
+  const youtubeContainerRef = useRef<HTMLDivElement>(null);
+  const vimeoContainerRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
 
   // Update player status based on audio-only mode
   useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    isMountedRef.current = true;
     setPlayerStatus(isAudioOnly ? 'initializing' : 'idle');
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [isAudioOnly]);
 
-  // YouTube iframe API integration
+  // Platform abstraction for player control
+  const getPlayer = () => {
+    return playerRef.current;
+  };
+
+  // API loaders
+  const loadYouTubeAPI = () => {
+    return new Promise<void>((resolve, reject) => {
+      if ((window as any).YT && (window as any).YT.Player) {
+        resolve();
+        return;
+      }
+
+      if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const checkReady = () => {
+          if ((window as any).YT && (window as any).YT.Player) resolve();
+          else setTimeout(checkReady, 100);
+        };
+        checkReady();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.onload = () => {
+        const checkReady = () => {
+          if ((window as any).YT && (window as any).YT.Player) resolve();
+          else setTimeout(checkReady, 100);
+        };
+        checkReady();
+      };
+      script.onerror = () => reject(new Error('Failed to load YouTube API'));
+      document.head.appendChild(script);
+      setTimeout(() => reject(new Error('YouTube API loading timeout')), 10000);
+    });
+  };
+
+  const loadVimeoAPI = () => {
+    return new Promise<void>((resolve, reject) => {
+      if ((window as any).Vimeo && (window as any).Vimeo.Player) {
+        resolve();
+        return;
+      }
+
+      if (document.querySelector('script[src*="vimeo.com/api/player.js"]')) {
+        const checkReady = () => {
+          if ((window as any).Vimeo && (window as any).Vimeo.Player) resolve();
+          else setTimeout(checkReady, 100);
+        };
+        checkReady();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://player.vimeo.com/api/player.js';
+      script.onload = () => {
+        const checkReady = () => {
+          if ((window as any).Vimeo && (window as any).Vimeo.Player) resolve();
+          else setTimeout(checkReady, 100);
+        };
+        checkReady();
+      };
+      script.onerror = () => reject(new Error('Failed to load Vimeo API'));
+      document.head.appendChild(script);
+      setTimeout(() => reject(new Error('Vimeo API loading timeout')), 10000);
+    });
+  };
+
+  // Player initialization
   useEffect(() => {
+    let active = true;
+
     if (!isAudioOnly) {
-      // Cleanup player when switching away from audio-only mode
-      const player = (window as any).youtubePlayer;
-      if (player && player.destroy) {
-        player.destroy();
+      if (playerRef.current) {
+        try {
+          if (playerRef.current.destroy) playerRef.current.destroy();
+        } catch (e) {
+          console.warn('Error destroying player:', e);
+        }
+        playerRef.current = null;
       }
       return;
     }
 
-    // Load YouTube IFrame Player API if not already loaded
-    const loadYouTubeAPI = () => {
-      return new Promise<void>((resolve, reject) => {
-        if ((window as any).YT && (window as any).YT.Player) {
-          resolve();
-          return;
-        }
+    const initPlayer = async () => {
+      try {
+        if (video.platform === 'youtube') {
+          await loadYouTubeAPI();
+          if (!active || !youtubeContainerRef.current) return;
 
-        if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-          // Script is already loading, wait for it
-          const checkReady = () => {
-            if ((window as any).YT && (window as any).YT.Player) {
-              resolve();
-            } else {
-              setTimeout(checkReady, 100);
+          // Cleanup previous instance if any
+          if (playerRef.current) {
+            try { playerRef.current.destroy(); } catch (e) { }
+          }
+
+          playerRef.current = new (window as any).YT.Player(youtubeContainerRef.current, {
+            height: '1',
+            width: '1',
+            videoId: video.id,
+            playerVars: {
+              autoplay: 0,
+              controls: 0,
+              disablekb: 1,
+              enablejsapi: 1,
+              fs: 0,
+              iv_load_policy: 3,
+              modestbranding: 1,
+              playsinline: 1,
+              rel: 0,
+              showinfo: 0
+            },
+            events: {
+              onReady: (event: any) => {
+                if (!active) {
+                  try { event.target.destroy(); } catch (e) { }
+                  return;
+                }
+                setPlayerStatus('ready');
+                const dur = event.target.getDuration();
+                if (dur && dur > 0) setDuration(dur);
+              },
+              onStateChange: (event: any) => {
+                if (!active) return;
+                const newIsPlaying = event.data === 1; // 1 = playing
+                setIsPlaying(newIsPlaying);
+                if (event.data === 1 && duration === 0) {
+                  const dur = event.target.getDuration();
+                  if (dur && dur > 0) setDuration(dur);
+                }
+              },
+              onError: (event: any) => {
+                if (!active) return;
+                console.error('YouTube player error:', event.data);
+                setPlayerStatus('error');
+              }
             }
-          };
-          checkReady();
-          return;
+          });
+        } else if (video.platform === 'vimeo') {
+          await loadVimeoAPI();
+          if (!active || !vimeoContainerRef.current) return;
+
+          // Cleanup previous instance if any
+          if (playerRef.current) {
+            try { playerRef.current.destroy(); } catch (e) { }
+          }
+
+          const player = new (window as any).Vimeo.Player(vimeoContainerRef.current, {
+            id: video.id,
+            width: 1,
+            height: 1,
+            autopause: false,
+            muted: false
+          });
+
+          playerRef.current = player;
+
+          player.ready().then(() => {
+            if (!active) return;
+            setPlayerStatus('ready');
+            player.getDuration().then((dur: number) => {
+              if (active && dur && dur > 0) setDuration(dur);
+            });
+          }).catch((error: any) => {
+            if (!active) return;
+            console.error('Vimeo player ready error:', error);
+            setPlayerStatus('error');
+          });
+
+          player.on('play', () => active && setIsPlaying(true));
+          player.on('pause', () => active && setIsPlaying(false));
+          player.on('ended', () => active && setIsPlaying(false));
+          player.on('error', (error: any) => {
+            if (!active) return;
+            console.error('Vimeo player error:', error);
+            setPlayerStatus('error');
+          });
         }
-
-        const script = document.createElement('script');
-        script.src = 'https://www.youtube.com/iframe_api';
-        script.onload = () => {
-          const checkReady = () => {
-            if ((window as any).YT && (window as any).YT.Player) {
-              resolve();
-            } else {
-              setTimeout(checkReady, 100);
-            }
-          };
-          checkReady();
-        };
-        script.onerror = () => reject(new Error('Failed to load YouTube API'));
-        document.head.appendChild(script);
-
-        // Timeout after 10 seconds
-        setTimeout(() => reject(new Error('YouTube API loading timeout')), 10000);
-      });
+      } catch (error) {
+        if (active) {
+          console.error('Failed to initialize player:', error);
+          setPlayerStatus('error');
+        }
+      }
     };
 
-    // Load API and create invisible player
-    loadYouTubeAPI().then(() => {
-      try {
-        // Create an invisible YouTube player
-        const player = new (window as any).YT.Player('youtube-audio-player', {
-          height: '1',
-          width: '1',
-          videoId: video.id,
-          playerVars: {
-            autoplay: 0,
-            controls: 0,
-            disablekb: 1,
-            enablejsapi: 1,
-            fs: 0,
-            iv_load_policy: 3,
-            modestbranding: 1,
-            playsinline: 1,
-            rel: 0,
-            showinfo: 0
-          },
-          events: {
-            onReady: (event: any) => {
-              setPlayerStatus('ready');
-              (window as any).youtubePlayer = event.target;
-              // Set initial duration
-              const dur = event.target.getDuration();
-              if (dur && dur > 0) {
-                setDuration(dur);
-              }
-            },
-            onStateChange: (event: any) => {
-              const newIsPlaying = event.data === 1; // 1 = playing
-              setIsPlaying(newIsPlaying);
-
-              // Update duration if not set yet
-              if (event.data === 1 && duration === 0) { // 1 = playing
-                const dur = event.target.getDuration();
-                if (dur && dur > 0) {
-                  setDuration(dur);
-                }
-              }
-            },
-            onError: (event: any) => {
-              console.error('YouTube player error:', event.data);
-              setPlayerStatus('error');
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Failed to create YouTube player:', error);
-        setPlayerStatus('error');
-      }
-    }).catch((error) => {
-      console.error('Failed to load YouTube API:', error);
-      setPlayerStatus('error');
-    });
+    initPlayer();
 
     return () => {
-      // Cleanup player
-      const player = (window as any).youtubePlayer;
-      if (player && player.destroy) {
-        player.destroy();
+      active = false;
+      if (playerRef.current) {
+        try {
+          if (playerRef.current.destroy) playerRef.current.destroy();
+        } catch (e) {
+          console.warn('Error destroying player:', e);
+        }
+        playerRef.current = null;
       }
     };
-  }, [isAudioOnly, video.id]);
+  }, [isAudioOnly, video.id, video.platform]);
 
   // Update current time while playing
   useEffect(() => {
     if (!isPlayerReady || !isPlaying) return;
 
-    const updateTime = () => {
+    const updateTime = async () => {
       try {
-        const player = (window as any).youtubePlayer;
-        if (player && player.getCurrentTime) {
+        const player = getPlayer();
+        if (!player) return;
+
+        if (video.platform === 'youtube' && player.getCurrentTime) {
           const current = player.getCurrentTime();
+          if (current !== undefined && current >= 0) {
+            setCurrentTime(current);
+          }
+        } else if (video.platform === 'vimeo' && player.getCurrentTime) {
+          const current = await player.getCurrentTime();
           if (current !== undefined && current >= 0) {
             setCurrentTime(current);
           }
@@ -177,63 +276,60 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
       }
     };
 
-    // Update immediately
     updateTime();
-
-    // Update every 500ms while playing
     const interval = setInterval(updateTime, 500);
-
     return () => clearInterval(interval);
-  }, [isPlayerReady, isPlaying]);
+  }, [isPlayerReady, isPlaying, video.platform]);
 
-  const sendToYouTube = (action: string, value?: any) => {
-    if (!isPlayerReady || !(window as any).youtubePlayer) {
-      console.warn('YouTube player not ready');
+  const sendCommand = (action: string, value?: any) => {
+    if (!isPlayerReady) {
+      console.warn('Player not ready');
+      return;
+    }
+
+    const player = getPlayer();
+    if (!player) {
+      console.warn(`${video.platform} player not found`);
       return;
     }
 
     try {
-      const player = (window as any).youtubePlayer;
-      switch (action) {
-        case 'playVideo':
-          player.playVideo();
-          break;
-        case 'pauseVideo':
-          player.pauseVideo();
-          break;
-        case 'stopVideo':
-          player.stopVideo();
-          break;
-        case 'seekTo':
-          player.seekTo(value, true);
-          break;
-        case 'setVolume':
-          player.setVolume(value);
-          break;
-        default:
-          console.warn('Unknown YouTube action:', action);
+      if (video.platform === 'youtube') {
+        switch (action) {
+          case 'play': player.playVideo(); break;
+          case 'pause': player.pauseVideo(); break;
+          case 'seek': player.seekTo(value, true); break;
+          case 'setVolume': player.setVolume(value * 100); break;
+        }
+      } else if (video.platform === 'vimeo') {
+        switch (action) {
+          case 'play': player.play(); break;
+          case 'pause': player.pause(); break;
+          case 'seek': player.setCurrentTime(value); break;
+          case 'setVolume': player.setVolume(value); break;
+        }
       }
     } catch (error) {
-      console.error('Error sending command to YouTube player:', error);
+      console.error(`Error sending command to ${video.platform} player:`, error);
     }
   };
 
   const handlePlayPause = () => {
     if (isPlaying) {
-      sendToYouTube('pauseVideo');
+      sendCommand('pause');
     } else {
-      sendToYouTube('playVideo');
+      sendCommand('play');
     }
   };
 
   const handleSeek = (time: number) => {
-    sendToYouTube('seekTo', time);
-    setCurrentTime(time); // Update UI immediately
+    sendCommand('seek', time);
+    setCurrentTime(time);
   };
 
   const handleVolumeChange = (newVolume: number) => {
     setVolume(newVolume);
-    sendToYouTube('setVolume', newVolume * 100);
+    sendCommand('setVolume', newVolume);
   };
 
   const formatTime = (seconds: number) => {
@@ -275,23 +371,49 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
     <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
       {/* Video/Audio player */}
       {isAudioOnly ? (
-        <div style={{ position: 'relative', width: '100%', height: '300px', borderRadius: '12px', backgroundColor: '#1f2937', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-          {/* Invisible YouTube player for audio playback */}
-          <div
-            id="youtube-audio-player"
-            style={{
-              position: 'absolute',
-              top: '-9999px',
-              left: '-9999px',
-              width: '1px',
-              height: '1px',
-              opacity: 0,
-              pointerEvents: 'none',
-              zIndex: -1
-            }}
-          />
+        <div key="audio-player" style={{ position: 'relative', width: '100%', height: '300px', borderRadius: '12px', backgroundColor: '#1f2937', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          {video.platform === 'youtube' ? (
+            <>
+              {/* Invisible YouTube player for audio playback */}
+              <div
+                ref={youtubeContainerRef}
+                style={{
+                  position: 'absolute',
+                  top: '-9999px',
+                  left: '-9999px',
+                  width: '1px',
+                  height: '1px',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  zIndex: -1
+                }}
+              />
+            </>
+          ) : video.platform === 'vimeo' ? (
+            <>
+              {/* Invisible Vimeo player for audio playback */}
+              <div
+                ref={vimeoContainerRef}
+                style={{
+                  position: 'absolute',
+                  top: '-9999px',
+                  left: '-9999px',
+                  width: '1px',
+                  height: '1px',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  zIndex: -1
+                }}
+              />
+            </>
+          ) : (
+            <div style={{ color: 'white', textAlign: 'center' }}>
+              <p>Audio-only mode is not yet supported for {video.platform}</p>
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>Please disable audio-only mode to watch the video</p>
+            </div>
+          )}
 
-          {/* Audio Controls */}
+          {/* Audio Controls (Shared for both platforms) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', width: '100%', maxWidth: '400px' }}>
             {/* Play/Pause Button */}
             <button
@@ -370,9 +492,12 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
           </div>
         </div>
       ) : (
-        <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px', backgroundColor: '#000000' }}>
+        <div key="video-player" style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', overflow: 'hidden', borderRadius: '12px', backgroundColor: '#000000' }}>
           <iframe
-            src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`}
+            src={video.platform === 'vimeo'
+              ? `https://player.vimeo.com/video/${video.id}?badge=0&autopause=0&player_id=0&app_id=58479`
+              : `https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`
+            }
             title={video.title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen

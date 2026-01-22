@@ -39,6 +39,9 @@ export class MetadataFilter extends BaseFilter {
       likeCount: video.likeCount,
       commentCount: video.commentCount,
       tags: video.tags,
+      platform: video.platform,
+      sourceType: video.metadata.sourceType,
+      sourceId: video.metadata.sourceId,
     };
     return fieldMap[field];
   }
@@ -132,7 +135,7 @@ export class PatternFilter extends BaseFilter {
     const conditionsMatched = this.evaluateConditions(video, rule, (condition) => {
       const value = this.getPatternProperty(video, condition.field);
       const text = String(value || '').toLowerCase();
-      
+
       if (condition.operator === 'regex') {
         try {
           // Remove (?i) if present, as we are creating the RegExp with 'i' flag
@@ -225,7 +228,7 @@ export class TemporalFilter extends BaseFilter {
 
         // Value is in days
         const thresholdDays = Number(condition.value);
-        
+
         // 'lt' means less than X days old (newer content)
         // 'gt' means greater than X days old (older content)
         if (condition.operator === 'lt') {
@@ -278,6 +281,8 @@ export class AllowlistFilter extends BaseFilter {
     const fieldMap: Record<string, unknown> = {
       videoId: video.id,
       channelId: video.channelId,
+      platform: video.platform,
+      sourceId: video.metadata.sourceId,
     };
     return fieldMap[field];
   }
@@ -311,6 +316,8 @@ export class BlocklistFilter extends BaseFilter {
     const fieldMap: Record<string, unknown> = {
       videoId: video.id,
       channelId: video.channelId,
+      platform: video.platform,
+      sourceId: video.metadata.sourceId,
     };
     return fieldMap[field];
   }
