@@ -8,8 +8,8 @@ deployment:
 
 branding:
   appName: "FaithStream"
-  logo: "/logos/faith-logo.png"
-  favicon: "/favicons/faith-favicon.ico"
+  logo: "/public/logos/faith-logo.png"
+  favicon: "/public/favicons/faith-favicon.ico"
   colorScheme:
     primary: "#7C3AED"
     secondary: "#EC4899"

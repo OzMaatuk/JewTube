@@ -8,8 +8,8 @@ deployment:
 
 branding:
   appName: "EduStream"
-  logo: "/logos/edu-logo.png"
-  favicon: "/favicons/edu-favicon.ico"
+  logo: "/public/logos/edu-logo.png"
+  favicon: "/public/favicons/edu-favicon.ico"
   colorScheme:
     primary: "#3B82F6"
     secondary: "#8B5CF6"
@@ -87,7 +87,7 @@ filters:
       conditions:
         - field: "title"
           operator: "regex"
-          value: "(?i)(you won't believe|shocking|must see|click here)"
+          value: "(you won't believe|shocking|must see|click here)"
       action: "block"
 
 privacy:

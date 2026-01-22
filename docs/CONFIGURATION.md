@@ -28,8 +28,8 @@ Customizes the visual appearance.
 ```yaml
 branding:
   appName: 'My Video App'
-  logo: '/logos/logo.png'
-  favicon: '/favicons/favicon.ico'
+  logo: '/public/logos/logo.png'
+  favicon: '/public/favicons/favicon.ico'
   colorScheme:
     primary: '#FF6B6B' # Main brand color
     secondary: '#4ECDC4' # Secondary color

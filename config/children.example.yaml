@@ -8,8 +8,8 @@ deployment:
 
 branding:
   appName: "Kids Safe Videos"
-  logo: "/logos/kids-logo.png"
-  favicon: "/favicons/kids-favicon.ico"
+  logo: "/public/logos/kids-logo.png"
+  favicon: "/public/favicons/kids-favicon.ico"
   colorScheme:
     primary: "#FF6B6B"
     secondary: "#4ECDC4"
