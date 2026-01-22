@@ -23,13 +23,7 @@ content:
   sources:
     # Approved religious channels
     - type: "channel"
-      id: "UCexample1"  # Replace with actual channel IDs
-    - type: "channel"
-      id: "UCexample2"
-    
-    # Curated sermon playlists
-    - type: "playlist"
-      id: "PLexample1"
+      id: "UCPjRHyDm5ngHYHNBn1LMc3g"
     
     # Specific approved videos
     - type: "video"
@@ -46,7 +40,7 @@ filters:
       conditions:
         - field: "channelId"
           operator: "in"
-          value: ["UCexample1", "UCexample2"]
+          value: ["UCPjRHyDm5ngHYHNBn1LMc3g"]
       action: "allow"
     
     # Block controversial topics
