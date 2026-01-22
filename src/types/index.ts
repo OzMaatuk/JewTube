@@ -3,37 +3,46 @@ import type { FilterCondition, FilterRule } from '@/lib/config/schema';
 export type { FilterCondition, FilterRule };
 
 // Core data models
-export interface Video {
+// Core data models
+export interface ContentItem {
   id: string;
   title: string;
   description: string;
+  type: 'video' | 'audio'; // Added to distinguish content type
+  platform: string;        // Added to distinguish source platform (youtube, rss, etc)
+  url: string;            // Added for direct access
   thumbnail: string;
-  thumbnailHigh?: string;
-  channelId: string;
-  channelName: string;
+  thumbnailHigh?: string; // Optional, mainly for video
+  channelId?: string;     // Made optional as not all sources have channels
+  channelName?: string;   // Made optional
   channelThumbnail?: string;
   publishedAt: Date;
   duration: number; // seconds
-  viewCount: number;
+  viewCount?: number; // Made optional
   likeCount?: number;
   commentCount?: number;
   tags: string[];
-  categoryId: string;
-  categoryName: string;
+  categoryId?: string; // Made optional
+  categoryName?: string; // Made optional
   defaultLanguage?: string;
   defaultAudioLanguage?: string;
-  contentRating: ContentRating;
-  hasClosedCaptions: boolean;
-  isLiveContent: boolean;
-  metadata: VideoMetadata;
+  contentRating?: ContentRating; // Made optional
+  hasClosedCaptions?: boolean;
+  isLiveContent?: boolean;
+  metadata: ContentMetadata; // Renamed from VideoMetadata
 }
 
-export interface VideoMetadata {
+// Backward compatibility alias
+export type Video = ContentItem;
+
+export interface ContentMetadata {
   fetchedAt: Date;
-  sourceType: 'channel' | 'playlist' | 'video' | 'search';
+  sourceType: string; // Generalized from 'channel'|'playlist'...
   sourceId: string;
   filterResults?: FilterResult[];
 }
+
+export interface VideoMetadata extends ContentMetadata { }
 
 export interface ContentRating {
   ytRating?: string;
@@ -68,7 +77,7 @@ export interface UserPlaylist {
   id: string;
   title: string;
   description: string;
-  videos: string[]; // video IDs
+  videos: string[]; // This should probably be contentIds, but keeping compatibility
   createdAt: Date;
   updatedAt: Date;
 }
@@ -131,8 +140,9 @@ export interface ColorScheme {
 }
 
 export interface ContentSource {
-  type: 'channel' | 'playlist' | 'video' | 'search';
-  id: string;
+  platform: string; // e.g. 'youtube', 'rss'
+  type: string;     // e.g. 'channel', 'playlist', 'feed'
+  id: string;       // identifier
   params?: Record<string, unknown>;
 }
 

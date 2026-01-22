@@ -1,5 +1,6 @@
 import { ContentAggregator } from '@/lib/content/aggregator';
-import type { DeploymentConfig, Video } from '@/types';
+import { contentSourceRegistry } from '@/lib/content/content-source';
+import type { DeploymentConfig, ContentItem } from '@/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
@@ -11,10 +12,20 @@ vi.mock('@/lib/cache', () => ({
   },
 }));
 
+vi.mock('@/lib/content/content-source', () => ({
+  contentSourceRegistry: {
+    register: vi.fn(),
+    get: vi.fn(),
+    getProviderNames: vi.fn(),
+  },
+}));
+
 vi.mock('@/lib/content/youtube-source', () => ({
   YouTubeVideoSource: vi.fn().mockImplementation(() => ({
-    fetchVideos: vi.fn(),
-    fetchVideoDetails: vi.fn(),
+    providerName: 'youtube',
+    fetchContent: vi.fn(),
+    fetchItemDetails: vi.fn(),
+    validateSource: vi.fn(),
   })),
 }));
 
@@ -34,8 +45,8 @@ const mockConfig: DeploymentConfig = {
   },
   content: {
     sources: [
-      { type: 'channel', id: 'UC123' },
-      { type: 'playlist', id: 'PL456' },
+      { type: 'channel', id: 'UC123', platform: 'youtube' },
+      { type: 'playlist', id: 'PL456', platform: 'youtube' },
     ],
     refreshInterval: 30,
     manualApprovalMode: false,
@@ -67,7 +78,7 @@ const mockConfig: DeploymentConfig = {
   },
 };
 
-const createTestVideo = (id: string): Video => ({
+const createTestVideo = (id: string): ContentItem => ({
   id,
   title: `Video ${id}`,
   description: 'Test description',
@@ -93,13 +104,24 @@ const createTestVideo = (id: string): Video => ({
     sourceType: 'channel',
     sourceId: 'UC123',
   },
+  type: 'video',
+  platform: 'youtube',
+  url: `https://youtube.com/watch?v=${id}`,
 });
 
 describe('ContentAggregator', () => {
   let aggregator: ContentAggregator;
+  const mockAdapter = {
+    providerName: 'youtube',
+    fetchContent: vi.fn(),
+    fetchItemDetails: vi.fn(),
+    validateSource: vi.fn(),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (contentSourceRegistry.get as any).mockReturnValue(mockAdapter);
+    (contentSourceRegistry.getProviderNames as any).mockReturnValue(['youtube']);
     aggregator = new ContentAggregator(mockConfig);
   });
 
@@ -108,9 +130,7 @@ describe('ContentAggregator', () => {
       const mockVideos1 = [createTestVideo('video1'), createTestVideo('video2')];
       const mockVideos2 = [createTestVideo('video3'), createTestVideo('video4')];
 
-      // @ts-ignore - accessing private property for testing
-      aggregator.videoSource.fetchVideos = vi
-        .fn()
+      mockAdapter.fetchContent
         .mockResolvedValueOnce(mockVideos1)
         .mockResolvedValueOnce(mockVideos2);
 
@@ -118,6 +138,7 @@ describe('ContentAggregator', () => {
 
       expect(result.length).toBe(4);
       expect(result.map((v) => v.id)).toEqual(['video1', 'video2', 'video3', 'video4']);
+      expect(mockAdapter.fetchContent).toHaveBeenCalledTimes(2);
     });
 
     it('should deduplicate videos with same ID', async () => {
@@ -125,9 +146,7 @@ describe('ContentAggregator', () => {
       const mockVideos1 = [duplicateVideo, createTestVideo('video1')];
       const mockVideos2 = [duplicateVideo, createTestVideo('video2')];
 
-      // @ts-ignore
-      aggregator.videoSource.fetchVideos = vi
-        .fn()
+      mockAdapter.fetchContent
         .mockResolvedValueOnce(mockVideos1)
         .mockResolvedValueOnce(mockVideos2);
 
@@ -144,9 +163,7 @@ describe('ContentAggregator', () => {
       const newVideo = createTestVideo('new');
       newVideo.publishedAt = new Date('2024-12-01');
 
-      // @ts-ignore
-      aggregator.videoSource.fetchVideos = vi
-        .fn()
+      mockAdapter.fetchContent
         .mockResolvedValueOnce([oldVideo])
         .mockResolvedValueOnce([newVideo]);
 
@@ -159,9 +176,7 @@ describe('ContentAggregator', () => {
     it('should continue with other sources if one fails', async () => {
       const mockVideos = [createTestVideo('video1')];
 
-      // @ts-ignore
-      aggregator.videoSource.fetchVideos = vi
-        .fn()
+      mockAdapter.fetchContent
         .mockRejectedValueOnce(new Error('Source 1 failed'))
         .mockResolvedValueOnce(mockVideos);
 
@@ -176,8 +191,12 @@ describe('ContentAggregator', () => {
     it('should apply pagination correctly', async () => {
       const allVideos = Array.from({ length: 50 }, (_, i) => createTestVideo(`video${i}`));
 
-      // @ts-ignore
-      aggregator.aggregateContent = vi.fn().mockResolvedValue(allVideos);
+      // Mock aggregateContent to avoid needing to mock adapter responses repeatedly
+      // We can iterate on the aggregator instance directly if we cast to any or just mock the method if we spy on it
+      // But simpler is to expect the adapter to be called and return all at once?
+      // Actually, aggregator logic calls aggregateContent.
+      // Let's spy on aggregateContent
+      vi.spyOn(aggregator, 'aggregateContent').mockResolvedValue(allVideos);
 
       const page1 = await aggregator.getVideos({ page: 1, limit: 20 });
       const page2 = await aggregator.getVideos({ page: 2, limit: 20 });
@@ -195,8 +214,7 @@ describe('ContentAggregator', () => {
       const musicVideo = createTestVideo('music');
       musicVideo.categoryName = 'Music';
 
-      // @ts-ignore
-      aggregator.aggregateContent = vi.fn().mockResolvedValue([educationVideo, musicVideo]);
+      vi.spyOn(aggregator, 'aggregateContent').mockResolvedValue([educationVideo, musicVideo]);
 
       const result = await aggregator.getVideos({ category: 'Education' });
 
@@ -209,17 +227,16 @@ describe('ContentAggregator', () => {
     it('should fetch single video by ID', async () => {
       const mockVideo = createTestVideo('test123');
 
-      // @ts-ignore
-      aggregator.videoSource.fetchVideoDetails = vi.fn().mockResolvedValue(mockVideo);
+      mockAdapter.fetchItemDetails.mockResolvedValue(mockVideo);
 
       const result = await aggregator.getVideoById('test123');
 
       expect(result).toEqual(mockVideo);
+      expect(mockAdapter.fetchItemDetails).toHaveBeenCalledWith('test123');
     });
 
     it('should return null for non-existent video', async () => {
-      // @ts-ignore
-      aggregator.videoSource.fetchVideoDetails = vi.fn().mockResolvedValue(null);
+      mockAdapter.fetchItemDetails.mockResolvedValue(null);
 
       const result = await aggregator.getVideoById('nonexistent');
 
@@ -232,8 +249,7 @@ describe('ContentAggregator', () => {
       const videos = [createTestVideo('video1'), createTestVideo('video2')];
       videos[1].categoryName = 'Music';
 
-      // @ts-ignore
-      aggregator.aggregateContent = vi.fn().mockResolvedValue(videos);
+      vi.spyOn(aggregator, 'aggregateContent').mockResolvedValue(videos);
 
       const stats = await aggregator.getStats();
 

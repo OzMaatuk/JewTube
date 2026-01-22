@@ -267,7 +267,8 @@ export class YouTubeClient {
     // Check if error is retryable
     const retryable = statusCode >= 500 || statusCode === 429;
 
-    logger.error(
+    const logMethod = statusCode === 404 ? 'warn' : 'error';
+    logger[logMethod](
       {
         statusCode,
         message,

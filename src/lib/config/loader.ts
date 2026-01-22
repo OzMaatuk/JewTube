@@ -144,22 +144,23 @@ function extractPartialConfig(rawConfig: unknown): DeploymentConfig | null {
           if (Array.isArray(sources) && sources.length > 0) {
             // Filter out invalid sources and ensure all have required fields
             const validSources = sources
-              .filter((s): s is Record<string, unknown> => 
-                typeof s === 'object' && 
-                s !== null && 
+              .filter((s): s is Record<string, unknown> =>
+                typeof s === 'object' &&
+                s !== null &&
                 typeof (s as Record<string, unknown>).id === 'string' &&
                 typeof (s as Record<string, unknown>).type === 'string'
               )
               .map((s) => ({
                 id: (s as Record<string, unknown>).id as string,
-                type: (s as Record<string, unknown>).type as 'channel' | 'playlist' | 'video' | 'search',
+                platform: ((s as Record<string, unknown>).platform as string) || 'youtube',
+                type: (s as Record<string, unknown>).type as string,
                 params: (s as Record<string, unknown>).params as Record<string, unknown> | undefined,
               }));
-            return validSources.length > 0 
-              ? validSources 
-              : [{ id: 'placeholder', type: 'channel' as const }];
+            return validSources.length > 0
+              ? validSources
+              : [{ id: 'placeholder', platform: 'youtube', type: 'channel' }];
           }
-          return [{ id: 'placeholder', type: 'channel' as const }];
+          return [{ id: 'placeholder', platform: 'youtube', type: 'channel' }];
         })(),
         refreshInterval: ((config.content as Record<string, unknown>)?.refreshInterval as number) || 30,
         manualApprovalMode: ((config.content as Record<string, unknown>)?.manualApprovalMode as boolean) || false,
@@ -169,27 +170,27 @@ function extractPartialConfig(rawConfig: unknown): DeploymentConfig | null {
         sensitivity: ((config.filters as Record<string, unknown>)?.sensitivity as 'strict' | 'moderate' | 'permissive') || 'moderate',
         rules: (Array.isArray((config.filters as Record<string, unknown>)?.rules)
           ? ((config.filters as Record<string, unknown>)?.rules as Array<{
-              id: string;
-              type: 'metadata' | 'content' | 'source' | 'pattern' | 'behavioral' | 'temporal' | 'allowlist' | 'blocklist' | 'external' | 'ml';
-              conditions: Array<{
-                field: string;
-                operator: 'equals' | 'contains' | 'regex' | 'gt' | 'lt' | 'in';
-                value?: unknown;
-              }>;
-              action: 'block' | 'allow';
-              logic?: 'AND' | 'OR';
-            }>)
+            id: string;
+            type: 'metadata' | 'content' | 'source' | 'pattern' | 'behavioral' | 'temporal' | 'allowlist' | 'blocklist' | 'external' | 'ml';
+            conditions: Array<{
+              field: string;
+              operator: 'equals' | 'contains' | 'regex' | 'gt' | 'lt' | 'in';
+              value?: unknown;
+            }>;
+            action: 'block' | 'allow';
+            logic?: 'AND' | 'OR';
+          }>)
           : []) as Array<{
-          id: string;
-          type: 'metadata' | 'content' | 'source' | 'pattern' | 'behavioral' | 'temporal' | 'allowlist' | 'blocklist' | 'external' | 'ml';
-          conditions: Array<{
-            field: string;
-            operator: 'equals' | 'contains' | 'regex' | 'gt' | 'lt' | 'in';
-            value?: unknown;
-          }>;
-          action: 'block' | 'allow';
-          logic?: 'AND' | 'OR';
-        }>,
+            id: string;
+            type: 'metadata' | 'content' | 'source' | 'pattern' | 'behavioral' | 'temporal' | 'allowlist' | 'blocklist' | 'external' | 'ml';
+            conditions: Array<{
+              field: string;
+              operator: 'equals' | 'contains' | 'regex' | 'gt' | 'lt' | 'in';
+              value?: unknown;
+            }>;
+            action: 'block' | 'allow';
+            logic?: 'AND' | 'OR';
+          }>,
         dryRunMode: ((config.filters as Record<string, unknown>)?.dryRunMode as boolean) || false,
       },
       privacy: {
@@ -198,16 +199,16 @@ function extractPartialConfig(rawConfig: unknown): DeploymentConfig | null {
         disableTracking: (privacy?.disableTracking as boolean) ?? false,
         ageGate: (privacy?.ageGate
           ? ({
-              enabled: ((privacy.ageGate as Record<string, unknown>)?.enabled as boolean) ?? false,
-              minimumAge: ((privacy.ageGate as Record<string, unknown>)?.minimumAge as number) ?? 13,
-              verificationMethod: ((privacy.ageGate as Record<string, unknown>)?.verificationMethod as 'simple' | 'date-of-birth') || 'simple',
-              redirectUrl: (privacy.ageGate as Record<string, unknown>)?.redirectUrl as string | undefined,
-            } as {
-              enabled: boolean;
-              minimumAge: number;
-              verificationMethod: 'simple' | 'date-of-birth';
-              redirectUrl?: string;
-            })
+            enabled: ((privacy.ageGate as Record<string, unknown>)?.enabled as boolean) ?? false,
+            minimumAge: ((privacy.ageGate as Record<string, unknown>)?.minimumAge as number) ?? 13,
+            verificationMethod: ((privacy.ageGate as Record<string, unknown>)?.verificationMethod as 'simple' | 'date-of-birth') || 'simple',
+            redirectUrl: (privacy.ageGate as Record<string, unknown>)?.redirectUrl as string | undefined,
+          } as {
+            enabled: boolean;
+            minimumAge: number;
+            verificationMethod: 'simple' | 'date-of-birth';
+            redirectUrl?: string;
+          })
           : undefined),
       },
       features: {

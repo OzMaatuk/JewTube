@@ -34,6 +34,9 @@ const createTestVideo = (overrides?: Partial<Video>): Video => ({
     sourceType: 'channel',
     sourceId: 'UC123',
   },
+  type: 'video',
+  platform: 'youtube',
+  url: 'https://youtube.com/watch?v=test123',
   ...overrides,
 });
 
@@ -203,6 +206,30 @@ describe('PatternFilter', () => {
 
     const result1 = await filter.evaluate(videoWithNumbers, rule);
     const result2 = await filter.evaluate(videoWithoutNumbers, rule);
+
+    expect(result1.passed).toBe(false);
+    expect(result2.passed).toBe(true);
+  });
+
+  it('should handle regex patterns with (?i) prefix', async () => {
+    const rule: FilterRule = {
+      id: 'block-politics',
+      type: 'pattern',
+      conditions: [
+        {
+          field: 'description',
+          operator: 'regex',
+          value: '(?i)(politics|debate)',
+        },
+      ],
+      action: 'block',
+    };
+
+    const politicalVideo = createTestVideo({ description: 'This is a political debate' });
+    const normalVideo = createTestVideo({ description: 'This is a normal video' });
+
+    const result1 = await filter.evaluate(politicalVideo, rule);
+    const result2 = await filter.evaluate(normalVideo, rule);
 
     expect(result1.passed).toBe(false);
     expect(result2.passed).toBe(true);

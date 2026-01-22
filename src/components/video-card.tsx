@@ -61,8 +61,8 @@ export function VideoCard({ video, showRemoveFromPlaylist, onRemoveFromPlaylist,
           </h3>
           <p style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>{video.channelName}</p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px', color: '#6b7280' }}>
-            <span>{formatNumber(video.viewCount)} views</span>
-            <span>{formatDate(video.publishedAt)}</span>
+            <span>{formatNumber(video.viewCount || 0)} views</span>
+            <span suppressHydrationWarning>{formatDate(video.publishedAt)}</span>
           </div>
           {video.duration > 0 && (
             <div style={{ display: 'inline-block', padding: '4px 8px', backgroundColor: '#f3f4f6', borderRadius: '9999px', fontSize: '12px', fontWeight: '600', color: '#374151' }}>

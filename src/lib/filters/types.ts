@@ -135,7 +135,9 @@ export class PatternFilter extends BaseFilter {
       
       if (condition.operator === 'regex') {
         try {
-          return new RegExp(String(condition.value), 'i').test(text);
+          // Remove (?i) if present, as we are creating the RegExp with 'i' flag
+          const cleanPattern = String(condition.value).replace(/^\(\?i\)/, '');
+          return new RegExp(cleanPattern, 'i').test(text);
         } catch (error) {
           logger.warn({ pattern: condition.value, error }, 'Invalid regex pattern, treating as literal');
           return text.includes(String(condition.value).toLowerCase());

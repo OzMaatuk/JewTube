@@ -1,4 +1,4 @@
 export { ContentAggregator } from './aggregator';
-export type { IVideoSource } from './video-source';
-export { VideoSourceRegistry, videoSourceRegistry } from './video-source';
+export type { IContentSourceAdapter } from './content-source';
+export { ContentSourceRegistry, contentSourceRegistry } from './content-source';
 export { YouTubeVideoSource } from './youtube-source';

@@ -19,8 +19,10 @@ export const brandingSchema = z.object({
 });
 
 // Content source schema
+// Content source schema
 export const contentSourceSchema = z.object({
-  type: z.enum(['channel', 'playlist', 'video', 'search']),
+  platform: z.string().default('youtube'),
+  type: z.string(), // Generalized from enum to support various source types
   id: z.string().min(1, 'Source ID is required'),
   params: z.record(z.any()).optional(),
 });

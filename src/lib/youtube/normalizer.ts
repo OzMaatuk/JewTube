@@ -1,17 +1,17 @@
 import { getLogger } from '@/lib/logger';
-import type { ContentRating, Video, VideoMetadata } from '@/types';
+import type { ContentItem, ContentRating, Video, VideoMetadata } from '@/types';
 import type { youtube_v3 } from 'googleapis';
 
 const logger = getLogger('youtube-normalizer');
 
 /**
- * Normalize YouTube API video response to our Video model
+ * Normalize YouTube API video response to our ContentItem model
  */
 export function normalizeVideo(
   ytVideo: youtube_v3.Schema$Video,
-  sourceType: 'channel' | 'playlist' | 'video' | 'search' = 'video',
+  sourceType: string = 'video',
   sourceId = ''
-): Video {
+): ContentItem {
   const snippet = ytVideo.snippet;
   const contentDetails = ytVideo.contentDetails;
   const statistics = ytVideo.statistics;
@@ -21,10 +21,16 @@ export function normalizeVideo(
     throw new Error('Invalid video data: missing required fields');
   }
 
+  // Construct YouTube URL
+  const url = `https://www.youtube.com/watch?v=${ytVideo.id}`;
+
   return {
     id: ytVideo.id,
     title: snippet.title || 'Untitled',
     description: snippet.description || '',
+    type: 'video',
+    platform: 'youtube',
+    url,
     thumbnail: snippet.thumbnails?.medium?.url || snippet.thumbnails?.default?.url || '',
     thumbnailHigh: snippet.thumbnails?.high?.url || snippet.thumbnails?.maxres?.url || undefined,
     channelId: snippet.channelId || '',
@@ -179,9 +185,9 @@ export function normalizePlaylist(ytPlaylist: youtube_v3.Schema$Playlist) {
  */
 export function normalizeVideos(
   ytVideos: youtube_v3.Schema$Video[],
-  sourceType: 'channel' | 'playlist' | 'video' | 'search' = 'video',
+  sourceType: string = 'video',
   sourceId = ''
-): Video[] {
+): ContentItem[] {
   return ytVideos
     .map((ytVideo) => {
       try {
@@ -197,5 +203,5 @@ export function normalizeVideos(
         return null;
       }
     })
-    .filter((video): video is Video => video !== null);
+    .filter((contentItem): contentItem is ContentItem => contentItem !== null);
 }

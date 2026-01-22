@@ -2,16 +2,16 @@ import { ContentNotFoundError } from '@/lib/errors';
 import { getLogger } from '@/lib/logger';
 import { YouTubeClient } from '@/lib/youtube/client';
 import { normalizeVideo, normalizeVideos } from '@/lib/youtube/normalizer';
-import type { ContentSource, Video } from '@/types';
-import type { IVideoSource } from './video-source';
+import type { ContentItem, ContentSource } from '@/types';
+import type { IContentSourceAdapter } from './content-source';
 
 const logger = getLogger('youtube-source');
 
 /**
- * YouTube video source adapter
+ * YouTube content source adapter
  */
-export class YouTubeVideoSource implements IVideoSource {
-  name = 'youtube';
+export class YouTubeVideoSource implements IContentSourceAdapter {
+  providerName = 'youtube';
   private client: YouTubeClient;
 
   constructor(apiKey: string) {
@@ -19,9 +19,9 @@ export class YouTubeVideoSource implements IVideoSource {
   }
 
   /**
-   * Fetch videos from a YouTube content source
+   * Fetch content from a YouTube source
    */
-  async fetchVideos(source: ContentSource): Promise<Video[]> {
+  async fetchContent(source: ContentSource): Promise<ContentItem[]> {
     if (!this.validateSource(source)) {
       throw new Error(`Invalid YouTube source: ${JSON.stringify(source)}`);
     }
@@ -61,38 +61,43 @@ export class YouTubeVideoSource implements IVideoSource {
         }
 
         default:
-          throw new Error(`Unsupported source type: ${source.type}`);
+          throw new Error(`Unsupported YouTube source type: ${source.type}`);
       }
 
       // Normalize videos to our data model
-      const videos = normalizeVideos(ytVideos, source.type, source.id);
+      const items = normalizeVideos(ytVideos, source.type, source.id);
 
       logger.info(
-        { source, count: videos.length },
-        `Fetched ${videos.length} videos from YouTube source`
+        { source, count: items.length },
+        `Fetched ${items.length} items from YouTube source`
       );
 
-      return videos;
+      return items;
     } catch (error) {
-      logger.error({ source, error }, 'Failed to fetch videos from YouTube source');
+      const isNotFound = error instanceof Error && 'statusCode' in error && (error as any).statusCode === 404;
+      if (isNotFound) {
+        logger.warn({ source, message: (error as Error).message }, 'YouTube source not found');
+      } else {
+        logger.error({ source, error }, 'Failed to fetch items from YouTube source');
+      }
       throw error;
     }
   }
 
   /**
-   * Fetch a single video by ID
+   * Fetch a single item by ID
    */
-  async fetchVideoDetails(videoId: string): Promise<Video | null> {
+  async fetchItemDetails(itemId: string): Promise<ContentItem | null> {
     try {
-      const ytVideo = await this.client.fetchVideoById(videoId);
+      const ytVideo = await this.client.fetchVideoById(itemId);
 
       if (!ytVideo) {
-        throw new ContentNotFoundError('Video', videoId);
+        throw new ContentNotFoundError('Video', itemId);
       }
 
-      return normalizeVideo(ytVideo, 'video', videoId);
+      return normalizeVideo(ytVideo, 'video', itemId);
     } catch (error) {
-      logger.error({ videoId, error }, 'Failed to fetch video details');
+      logger.error({ itemId, error }, 'Failed to fetch video details');
       throw error;
     }
   }
@@ -101,6 +106,11 @@ export class YouTubeVideoSource implements IVideoSource {
    * Validate if a content source is valid for YouTube
    */
   validateSource(source: ContentSource): boolean {
+    // Check if platform is explicitly 'youtube' or undefined (default)
+    if (source.platform && source.platform !== 'youtube') {
+      return false;
+    }
+
     if (!source.id && source.type !== 'search') {
       return false;
     }

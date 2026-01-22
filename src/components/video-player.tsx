@@ -250,10 +250,10 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
 
   const handleNextVideo = () => {
     if (!playlistId || currentIndex === undefined) return;
-    
+
     const playlist = PlaylistManager.getPlaylistById(playlistId);
     if (!playlist) return;
-    
+
     const nextIndex = currentIndex + 1;
     if (nextIndex < playlist.videos.length) {
       const nextVideoId = playlist.videos[nextIndex];
@@ -263,10 +263,10 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
 
   const handlePreviousVideo = () => {
     if (!playlistId || currentIndex === undefined || currentIndex === 0) return;
-    
+
     const playlist = PlaylistManager.getPlaylistById(playlistId);
     if (!playlist) return;
-    
+
     const prevIndex = currentIndex - 1;
     const prevVideoId = playlist.videos[prevIndex];
     router.push(`/video/${prevVideoId}?playlist=${playlistId}&index=${prevIndex}`);
@@ -391,9 +391,9 @@ export function VideoPlayer({ video, playlistId, currentIndex }: VideoPlayerProp
             </p>
           )}
           <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#6b7280' }}>
-            <span>{formatNumber(video.viewCount)} views</span>
+            <span>{formatNumber(video.viewCount || 0)} views</span>
             <span>•</span>
-            <span>{formatDate(video.publishedAt)}</span>
+            <span suppressHydrationWarning>{formatDate(video.publishedAt)}</span>
             {video.likeCount && video.likeCount > 0 && (
               <>
                 <span>•</span>

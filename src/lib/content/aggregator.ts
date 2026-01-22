@@ -1,78 +1,89 @@
 import { cache } from '@/lib/cache';
 import { getLogger, logPerformance } from '@/lib/logger';
-import type { DeploymentConfig, Video, VideoQueryParams } from '@/types';
-import { type IVideoSource, videoSourceRegistry } from './video-source';
+import type { DeploymentConfig, ContentItem, VideoQueryParams } from '@/types';
+import { contentSourceRegistry } from './content-source';
 import { YouTubeVideoSource } from './youtube-source';
 
 const logger = getLogger('content-aggregator');
 
 /**
  * Content aggregator service
- * Fetches and combines videos from multiple sources
+ * Fetches and combines content from multiple sources
  */
 export class ContentAggregator {
   private config: DeploymentConfig;
-  private videoSource: IVideoSource;
 
   constructor(config: DeploymentConfig) {
     this.config = config;
 
-    // Initialize YouTube source
-    this.videoSource = new YouTubeVideoSource(config.api.youtubeApiKey);
-
-    // Register in global registry for extensibility
-    videoSourceRegistry.register(this.videoSource);
+    // Initialize standard adapters
+    // In the future, this could be dynamic or plugin-based
+    const youtubeSource = new YouTubeVideoSource(config.api.youtubeApiKey);
+    contentSourceRegistry.register(youtubeSource);
   }
 
   /**
    * Aggregate content from all configured sources
    */
-  async aggregateContent(): Promise<Video[]> {
+  async aggregateContent(): Promise<ContentItem[]> {
     const start = Date.now();
     logger.info('Starting content aggregation');
 
     try {
-      const allVideos: Video[] = [];
+      const allItems: ContentItem[] = [];
 
-      // Fetch videos from each source
+      // Fetch content from each source
       for (const source of this.config.content.sources) {
         try {
-          const videos = await this.videoSource.fetchVideos(source);
-          allVideos.push(...videos);
+          const platform = source.platform || 'youtube';
+          const adapter = contentSourceRegistry.get(platform);
+
+          if (!adapter) {
+            logger.warn({ source }, `No adapter found for platform: ${platform}`);
+            continue;
+          }
+
+          const items = await adapter.fetchContent(source);
+          allItems.push(...items);
 
           logger.info(
-            { source, count: videos.length },
-            `Fetched ${videos.length} videos from source`
+            { source, count: items.length },
+            `Fetched ${items.length} items from source`
           );
         } catch (error) {
-          logger.error({ source, error }, 'Failed to fetch from source');
+          const isNotFound = error instanceof Error && 'statusCode' in error && (error as any).statusCode === 404;
+          if (isNotFound) {
+            logger.warn({ source, message: (error as Error).message }, 'Source not found, skipping');
+          } else {
+            logger.error({ source, error }, 'Failed to fetch from source');
+          }
           // Continue with other sources even if one fails
         }
       }
 
-      // Deduplicate videos
-      const uniqueVideos = this.deduplicateVideos(allVideos);
+      // Deduplicate items
+      const uniqueItems = this.deduplicateItems(allItems);
 
       // Sort by published date (newest first)
-      uniqueVideos.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
+      uniqueItems.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
 
       const duration = Date.now() - start;
       logPerformance('content-aggregation', duration, {
         sources: this.config.content.sources.length,
-        totalVideos: allVideos.length,
-        uniqueVideos: uniqueVideos.length,
+        totalItems: allItems.length,
+        uniqueItems: uniqueItems.length,
       });
 
       logger.info(
         {
-          totalVideos: allVideos.length,
-          uniqueVideos: uniqueVideos.length,
+          totalItems: allItems.length,
+          uniqueItems: uniqueItems.length,
           duration,
         },
         'Content aggregation completed'
       );
 
-      return uniqueVideos;
+      return uniqueItems;
     } catch (error) {
       const duration = Date.now() - start;
       logger.error({ error, duration }, 'Content aggregation failed');
@@ -81,98 +92,130 @@ export class ContentAggregator {
   }
 
   /**
-   * Get videos with pagination
+   * Get videos with pagination (alias for backward compatibility)
    */
-  async getVideos(params: VideoQueryParams = {}): Promise<Video[]> {
+  async getVideos(params: VideoQueryParams = {}): Promise<ContentItem[]> {
+    return this.getContent(params);
+  }
+
+  /**
+   * Get content with pagination
+   */
+  async getContent(params: VideoQueryParams = {}): Promise<ContentItem[]> {
     const { page = 1, limit = 20, category, q } = params;
 
     // Try to get from cache first
-    const cacheKey = `videos:${page}:${limit}:${category || 'all'}:${q || ''}`;
-    const cached = await cache.get<Video[]>(cacheKey, this.config.deployment.id);
+    const cacheKey = `content:${page}:${limit}:${category || 'all'}:${q || ''}`;
+    const cached = await cache.get<ContentItem[]>(cacheKey, this.config.deployment.id);
 
     if (cached) {
-      logger.debug({ cacheKey }, 'Returning cached videos');
+      logger.debug({ cacheKey }, 'Returning cached content');
       return cached;
     }
 
     // Fetch fresh content
-    const allVideos = await this.aggregateContent();
+    const allItems = await this.aggregateContent();
 
     // Filter by category if specified
-    let filteredVideos = allVideos;
+    let filteredItems = allItems;
     if (category) {
-      filteredVideos = allVideos.filter((video) => video.categoryName === category);
+      filteredItems = allItems.filter((item) => item.categoryName === category);
     }
 
     // Filter by search query if specified
     if (q) {
       const query = q.toLowerCase();
-      filteredVideos = filteredVideos.filter((video) =>
-        video.title.toLowerCase().includes(query) ||
-        video.description.toLowerCase().includes(query) ||
-        video.channelName.toLowerCase().includes(query) ||
-        video.tags.some(tag => tag.toLowerCase().includes(query))
+      filteredItems = filteredItems.filter((item) =>
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        (item.channelName && item.channelName.toLowerCase().includes(query)) ||
+        item.tags.some(tag => tag.toLowerCase().includes(query))
       );
     }
 
     // Apply pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedVideos = filteredVideos.slice(startIndex, endIndex);
+    const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
     // Cache the result
     const ttl = this.config.content.refreshInterval * 60; // Convert minutes to seconds
-    await cache.set(cacheKey, paginatedVideos, ttl, this.config.deployment.id);
+    await cache.set(cacheKey, paginatedItems, ttl, this.config.deployment.id);
 
-    return paginatedVideos;
+    return paginatedItems;
   }
 
   /**
-   * Get a single video by ID
+   * Get a single video by ID (alias)
    */
-  async getVideoById(videoId: string): Promise<Video | null> {
+  async getVideoById(videoId: string): Promise<ContentItem | null> {
+    return this.getItemById(videoId);
+  }
+
+  /**
+   * Get a single item by ID
+   */
+  async getItemById(itemId: string): Promise<ContentItem | null> {
     // Try cache first
-    const cacheKey = `video:${videoId}`;
-    const cached = await cache.get<Video>(cacheKey, this.config.deployment.id);
+    const cacheKey = `item:${itemId}`;
+    const cached = await cache.get<ContentItem>(cacheKey, this.config.deployment.id);
 
     if (cached) {
-      logger.debug({ videoId }, 'Returning cached video');
+      logger.debug({ itemId }, 'Returning cached item');
       return cached;
     }
 
-    // Fetch from source
-    try {
-      const video = await this.videoSource.fetchVideoDetails(videoId);
+    // Since we don't know the source of an arbitrary ID (unless we encode it in ID),
+    // we might need to query all adapters or rely on the fact that IDs are unique enough?
+    // OR we assume we can ask any adapter?
+    // Current implementation of getVideoById in original code asked `this.videoSource.fetchVideoDetails`.
+    // But now we have multiple sources.
+    // If ID is valid YouTube ID, YouTube adapter might return it.
+    // Strategy: ask all registered adapters until one returns it? Or check ID format?
+    // Ideally, we should know the platform from the ID context, but here we only have ID.
+    // For now, iterate all adapters.
 
-      if (video) {
-        // Cache for 10 minutes
-        await cache.set(cacheKey, video, 600, this.config.deployment.id);
+    try {
+      for (const providerName of contentSourceRegistry.getProviderNames()) {
+        const adapter = contentSourceRegistry.get(providerName);
+        if (adapter) {
+          try {
+            const item = await adapter.fetchItemDetails(itemId);
+            if (item) {
+              // Cache for 10 minutes
+              await cache.set(cacheKey, item, 600, this.config.deployment.id);
+              return item;
+            }
+          } catch (e) {
+            // Ignore specific adapter errors if item not found
+          }
+        }
       }
 
-      return video;
+      return null;
     } catch (error) {
-      logger.error({ videoId, error }, 'Failed to fetch video by ID');
+      logger.error({ itemId, error }, 'Failed to fetch item by ID');
       return null;
     }
   }
 
   /**
-   * Deduplicate videos by ID
+   * Deduplicate items by ID
    */
-  private deduplicateVideos(videos: Video[]): Video[] {
+  private deduplicateItems(items: ContentItem[]): ContentItem[] {
     const seen = new Set<string>();
-    const unique: Video[] = [];
+    const unique: ContentItem[] = [];
 
-    for (const video of videos) {
-      if (!seen.has(video.id)) {
-        seen.add(video.id);
-        unique.push(video);
+    for (const item of items) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        unique.push(item);
       }
     }
 
-    const duplicates = videos.length - unique.length;
+    const duplicates = items.length - unique.length;
     if (duplicates > 0) {
-      logger.info({ duplicates }, `Removed ${duplicates} duplicate videos`);
+      logger.info({ duplicates }, `Removed ${duplicates} duplicate items`);
     }
 
     return unique;
@@ -186,7 +229,8 @@ export class ContentAggregator {
 
     try {
       // Clear existing cache
-      await cache.deletePattern('videos:*', this.config.deployment.id);
+      await cache.deletePattern('content:*', this.config.deployment.id);
+      await cache.deletePattern('videos:*', this.config.deployment.id); // Clear old keys too
 
       // Fetch fresh content
       await this.aggregateContent();
@@ -202,15 +246,17 @@ export class ContentAggregator {
    * Get content statistics
    */
   async getStats(): Promise<{
-    totalVideos: number;
+    totalItems: number; // Renamed from totalVideos
+    totalVideos: number; // Keep for compat
     sources: number;
     categories: string[];
   }> {
-    const videos = await this.aggregateContent();
-    const categories = [...new Set(videos.map((v) => v.categoryName))];
+    const items = await this.aggregateContent();
+    const categories = [...new Set(items.map((item) => item.categoryName || 'Unknown'))];
 
     return {
-      totalVideos: videos.length,
+      totalItems: items.length,
+      totalVideos: items.length, // For now, assume all are videos
       sources: this.config.content.sources.length,
       categories,
     };
@@ -225,7 +271,7 @@ export class ContentAggregator {
 
     try {
       // Pre-fetch first page
-      await this.getVideos({ page: 1, limit: 20 });
+      await this.getContent({ page: 1, limit: 20 });
 
       const duration = Date.now() - start;
       logger.info({ duration }, `Cache warmed in ${duration}ms`);
