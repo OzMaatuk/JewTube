@@ -52,7 +52,7 @@ describe('Video Normalizer', () => {
     expect(normalized.tags).toEqual(['test', 'video']);
     expect(normalized.categoryId).toBe('27');
     expect(normalized.hasClosedCaptions).toBe(true);
-    expect(normalized.contentRating.madeForKids).toBe(false);
+    expect(normalized.contentRating?.madeForKids).toBe(false);
   });
 
   it('should parse ISO 8601 duration correctly', () => {
@@ -121,7 +121,7 @@ describe('Video Normalizer', () => {
     });
 
     const normalized = normalizeVideo(ageRestrictedVideo, 'channel', 'UC123');
-    expect(normalized.contentRating.ageRestricted).toBe(true);
+    expect(normalized.contentRating?.ageRestricted).toBe(true);
   });
 
   it('should detect made-for-kids content', () => {
@@ -132,7 +132,7 @@ describe('Video Normalizer', () => {
     });
 
     const normalized = normalizeVideo(kidsVideo, 'channel', 'UC123');
-    expect(normalized.contentRating.madeForKids).toBe(true);
+    expect(normalized.contentRating?.madeForKids).toBe(true);
   });
 
   it('should include metadata about source', () => {

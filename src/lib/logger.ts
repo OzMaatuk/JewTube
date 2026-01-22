@@ -11,21 +11,21 @@ export function setDeploymentId(id: string) {
 export const logger = {
   info: (obj: any, msg?: string) => {
     if (msg) {
-      console.log(`[${deploymentId}] INFO:`, msg, obj);
+      console.log(`[${deploymentId}] INFO: ${msg}`, obj);
     } else {
       console.log(`[${deploymentId}] INFO:`, obj);
     }
   },
   error: (obj: any, msg?: string) => {
     if (msg) {
-      console.error(`[${deploymentId}] ERROR:`, msg, obj);
+      console.error(`[${deploymentId}] ERROR: ${msg}`, obj);
     } else {
       console.error(`[${deploymentId}] ERROR:`, obj);
     }
   },
   warn: (obj: any, msg?: string) => {
     if (msg) {
-      console.warn(`[${deploymentId}] WARN:`, msg, obj);
+      console.warn(`[${deploymentId}] WARN: ${msg}`, obj);
     } else {
       console.warn(`[${deploymentId}] WARN:`, obj);
     }
@@ -33,7 +33,7 @@ export const logger = {
   debug: (obj: any, msg?: string) => {
     if (process.env.NODE_ENV === 'development') {
       if (msg) {
-        console.debug(`[${deploymentId}] DEBUG:`, msg, obj);
+        console.debug(`[${deploymentId}] DEBUG: ${msg}`, obj);
       } else {
         console.debug(`[${deploymentId}] DEBUG:`, obj);
       }
@@ -44,21 +44,21 @@ export const logger = {
       ...logger,
       info: (obj: any, msg?: string) => {
         if (msg) {
-          console.log(`[${deploymentId}] ${context?.context || 'unknown'} INFO:`, msg, obj);
+          console.log(`[${deploymentId}] ${context?.context || 'unknown'} INFO: ${msg}`, obj);
         } else {
           console.log(`[${deploymentId}] ${context?.context || 'unknown'} INFO:`, obj);
         }
       },
       error: (obj: any, msg?: string) => {
         if (msg) {
-          console.error(`[${deploymentId}] ${context?.context || 'unknown'} ERROR:`, msg, obj);
+          console.error(`[${deploymentId}] ${context?.context || 'unknown'} ERROR: ${msg}`, obj);
         } else {
           console.error(`[${deploymentId}] ${context?.context || 'unknown'} ERROR:`, obj);
         }
       },
       warn: (obj: any, msg?: string) => {
         if (msg) {
-          console.warn(`[${deploymentId}] ${context?.context || 'unknown'} WARN:`, msg, obj);
+          console.warn(`[${deploymentId}] ${context?.context || 'unknown'} WARN: ${msg}`, obj);
         } else {
           console.warn(`[${deploymentId}] ${context?.context || 'unknown'} WARN:`, obj);
         }
@@ -66,7 +66,7 @@ export const logger = {
       debug: (obj: any, msg?: string) => {
         if (process.env.NODE_ENV === 'development') {
           if (msg) {
-            console.debug(`[${deploymentId}] ${context?.context || 'unknown'} DEBUG:`, msg, obj);
+            console.debug(`[${deploymentId}] ${context?.context || 'unknown'} DEBUG: ${msg}`, obj);
           } else {
             console.debug(`[${deploymentId}] ${context?.context || 'unknown'} DEBUG:`, obj);
           }
@@ -179,7 +179,7 @@ export function logYouTubeApiCall(
  * Log cache operation
  */
 export function logCacheOperation(
-  operation: 'hit' | 'miss' | 'set' | 'delete',
+  operation: 'hit' | 'miss' | 'set' | 'delete' | 'hit (memory)' | 'delete (pattern)',
   key: string,
   metadata?: Record<string, unknown>
 ) {

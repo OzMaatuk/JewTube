@@ -92,13 +92,16 @@ export class YouTubeVideoSource implements IContentSourceAdapter {
       const ytVideo = await this.client.fetchVideoById(itemId);
 
       if (!ytVideo) {
-        throw new ContentNotFoundError('Video', itemId);
+        return null; // Not found on YouTube, normal for other sources
       }
 
       return normalizeVideo(ytVideo, 'video', itemId);
     } catch (error) {
-      logger.error({ itemId, error }, 'Failed to fetch video details');
-      throw error;
+      const isNotFound = error instanceof Error && 'statusCode' in error && (error as any).statusCode === 404;
+      if (!isNotFound) {
+        logger.error({ itemId, error }, 'Failed to fetch YouTube video details');
+      }
+      return null;
     }
   }
 

@@ -53,6 +53,9 @@ const createTestVideo = (overrides?: Partial<Video>): Video => ({
   id: 'test123',
   title: 'Test Video',
   description: 'Test description',
+  type: 'video' as const,
+  platform: 'youtube',
+  url: 'https://www.youtube.com/watch?v=test123',
   thumbnail: 'https://example.com/thumb.jpg',
   channelId: 'UC123',
   channelName: 'Test Channel',
@@ -156,7 +159,7 @@ describe('FilterEngine', () => {
 
     expect(passed.length).toBe(1);
     expect(blocked.length).toBe(1);
-    expect(passed[0].contentRating.madeForKids).toBe(true);
+    expect(passed[0].contentRating?.madeForKids).toBe(true);
   });
 
   it('should support dry-run mode', async () => {

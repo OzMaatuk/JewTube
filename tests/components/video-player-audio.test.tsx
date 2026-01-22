@@ -48,6 +48,9 @@ const mockVideo = {
   tags: [],
   categoryId: 'test-category',
   categoryName: 'Test Category',
+  type: 'video' as const,
+  platform: 'youtube',
+  url: 'https://www.youtube.com/watch?v=test-video-id',
   likeCount: 100,
   commentCount: 50,
   contentRating: {
